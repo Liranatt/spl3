@@ -12,7 +12,9 @@ public abstract class BaseServer<T> implements Server<T> {
     private final int port;
     private final Supplier<StompMessagingProtocolImpl> protocolFactory;
     private final Supplier<StompMessageEncoderDecoder> encdecFactory;
+    private final ConnectionsImpl<T> connections;
     private ServerSocket sock;
+    private int numClients;
 
     public BaseServer(
             int port,
@@ -23,6 +25,8 @@ public abstract class BaseServer<T> implements Server<T> {
         this.protocolFactory = protocolFactory;
         this.encdecFactory = encdecFactory;
 		this.sock = null;
+		this.connections = ConnectionsImpl.getInstance();
+        numClients = 0;
     }
 
     @Override
@@ -37,11 +41,15 @@ public abstract class BaseServer<T> implements Server<T> {
 
                 Socket clientSock = serverSock.accept();
 
+
                 BlockingConnectionHandler<T> handler = new BlockingConnectionHandler<>(
                         clientSock,
                         encdecFactory.get(),
-                        protocolFactory.get());
+                        protocolFactory.get(),
+                        numClients);
 
+                connections.addConnection(handler, numClients);
+                numClients++;
                 execute(handler);
             }
         } catch (IOException ex) {

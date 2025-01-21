@@ -1,4 +1,4 @@
-package bgu.spl.net.impl.stomp;
+package bgu.spl.net.impl.stomp.Frames;
 import java.util.HashMap;
 
 public abstract class Frame {

@@ -2,7 +2,7 @@ package bgu.spl.net.srv;
 
 import bgu.spl.net.api.StompMessagingProtocolImpl;
 import bgu.spl.net.api.StompMessageEncoderDecoder;
-import bgu.spl.net.impl.stomp.Frame;
+import bgu.spl.net.impl.stomp.Frames.Frame;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
@@ -16,11 +16,14 @@ public class BlockingConnectionHandler<T> implements Runnable, ConnectionHandler
     private BufferedInputStream in;
     private BufferedOutputStream out;
     private volatile boolean connected = true;
+    private final int clientId;
 
-    public BlockingConnectionHandler(Socket sock, StompMessageEncoderDecoder reader, StompMessagingProtocolImpl protocol) {
+    public BlockingConnectionHandler(Socket sock, StompMessageEncoderDecoder reader, StompMessagingProtocolImpl protocol, int clientId) {
         this.sock = sock;
         this.encdec = reader;
         this.protocol = protocol;
+        this.clientId = clientId;
+        protocol.start(clientId, ConnectionsImpl.getInstance());
     }
 
     @Override
@@ -57,6 +60,12 @@ public class BlockingConnectionHandler<T> implements Runnable, ConnectionHandler
 
     @Override
     public void send(T msg) {
+        byte[] bytes = encdec.encode((Frame) msg);
+        try {
+            out.write(bytes);
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
+        }
         //IMPLEMENT IF NEEDED
         System.out.println("BlockingConnectionHandler.send() has been called");
     }

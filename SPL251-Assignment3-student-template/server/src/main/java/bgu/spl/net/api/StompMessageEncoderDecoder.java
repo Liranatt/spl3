@@ -1,6 +1,6 @@
 package bgu.spl.net.api;
 
-import bgu.spl.net.impl.stomp.*;
+import bgu.spl.net.impl.stomp.Frames.*;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;

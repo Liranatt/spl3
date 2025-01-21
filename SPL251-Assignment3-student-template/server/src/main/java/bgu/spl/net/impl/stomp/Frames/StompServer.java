@@ -1,4 +1,4 @@
-package bgu.spl.net.impl.stomp;
+package bgu.spl.net.impl.stomp.Frames;
 
 import bgu.spl.net.api.StompMessagingProtocolImpl;
 import bgu.spl.net.api.StompMessageEncoderDecoder;

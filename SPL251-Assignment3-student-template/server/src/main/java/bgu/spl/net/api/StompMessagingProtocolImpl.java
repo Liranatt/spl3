@@ -1,6 +1,6 @@
 package bgu.spl.net.api;
 
-import bgu.spl.net.impl.stomp.*;
+import bgu.spl.net.impl.stomp.Frames.Frame;
 import bgu.spl.net.srv.Connections;
 import bgu.spl.net.srv.ConnectionsImpl;
 
@@ -20,13 +20,19 @@ public class StompMessagingProtocolImpl implements StompMessagingProtocol<Frame>
 
     @Override
     public void process(Frame message) {
-        if (message instanceof ConnectFrame) {
-            connections.connect(connectionId);
+        switch (message.getCommand()) {
+            case "CONNECT":
+                break;
+            case "SEND":
+                break;
+            case "SUBSCRIBE":
+                break;
+            case "UNSUBSCRIBE":
+                break;
+            case "DISCONNECT":
+                break;
+
         }
-//        else if (message instanceof SendFrame) {}
-//        else if (message instanceof SubscribeFrame) {}
-//        else if (message instanceof UnSubscribeFrame) {}
-//        else if (message instanceof DisconnectFrame) {}
     }
 
     @Override
