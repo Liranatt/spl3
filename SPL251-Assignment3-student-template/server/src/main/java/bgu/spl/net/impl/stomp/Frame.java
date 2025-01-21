@@ -17,17 +17,28 @@ public abstract class Frame {
         this.body = body;
     }
 
-    public byte[] encode() {
-        StringBuilder output = new StringBuilder();
-        output.append(this.command + "\n");
-        for (String key: this.headers.keySet()){
-            String value = this.headers.get(key);
-            output.append(key+":"+value+"\n");
-        }
-        output.append("\n");
-        output.append(this.body + "\n");
-        output.append('\0');
-        return output.toString().getBytes();
+//    public byte[] encode() {
+//        StringBuilder output = new StringBuilder();
+//        output.append(this.command + "\n");
+//        for (String key: this.headers.keySet()){
+//            String value = this.headers.get(key);
+//            output.append(key+":"+value+"\n");
+//        }
+//        output.append("\n");
+//        output.append(this.body + "\n");
+//        output.append('\0');
+//        return output.toString().getBytes();
+//    }
+
+    public String getCommand() {
+        return command;
     }
 
+    public String getBody() {
+        return body;
+    }
+
+    public HashMap<String, String> getHeaders() {
+        return headers;
+    }
 }
