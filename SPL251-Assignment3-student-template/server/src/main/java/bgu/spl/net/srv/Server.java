@@ -23,7 +23,7 @@ public interface Server<T> extends Closeable {
     public static <T> Server<T>  threadPerClient(
             int port,
             Supplier<StompMessagingProtocolImpl > protocolFactory,
-            Supplier<StomptMessageEncoderDecoder> encoderDecoderFactory) {
+            Supplier<StompMessageEncoderDecoder> encoderDecoderFactory) {
 
         return new BaseServer<T>(port, protocolFactory, encoderDecoderFactory) {
             @Override
@@ -47,7 +47,7 @@ public interface Server<T> extends Closeable {
             int nthreads,
             int port,
             Supplier<StompMessagingProtocolImpl> protocolFactory,
-            Supplier<StomptMessageEncoderDecoder> encoderDecoderFactory) {
+            Supplier<StompMessageEncoderDecoder> encoderDecoderFactory) {
         return new Reactor<T>(nthreads, port, protocolFactory, encoderDecoderFactory);
     }
 

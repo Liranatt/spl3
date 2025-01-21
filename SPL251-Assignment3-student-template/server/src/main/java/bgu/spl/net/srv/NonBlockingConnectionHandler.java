@@ -1,7 +1,7 @@
 package bgu.spl.net.srv;
 
 import bgu.spl.net.api.StompMessagingProtocolImpl;
-import bgu.spl.net.api.StomptMessageEncoderDecoder;
+import bgu.spl.net.api.StompMessageEncoderDecoder;
 import bgu.spl.net.impl.stomp.Frame;
 
 import java.io.IOException;
@@ -17,13 +17,13 @@ public class NonBlockingConnectionHandler<T> implements ConnectionHandler<T> {
     private static final ConcurrentLinkedQueue<ByteBuffer> BUFFER_POOL = new ConcurrentLinkedQueue<>();
 
     private final StompMessagingProtocolImpl protocol;
-    private final StomptMessageEncoderDecoder encdec;
+    private final StompMessageEncoderDecoder encdec;
     private final Queue<ByteBuffer> writeQueue = new ConcurrentLinkedQueue<>();
     private final SocketChannel chan;
     private final Reactor reactor;
 
     public NonBlockingConnectionHandler(
-            StomptMessageEncoderDecoder reader,
+            StompMessageEncoderDecoder reader,
             StompMessagingProtocolImpl protocol,
             SocketChannel chan,
             Reactor reactor) {

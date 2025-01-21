@@ -5,7 +5,7 @@ import bgu.spl.net.impl.stomp.*;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
-public class StomptMessageEncoderDecoder implements MessageEncoderDecoder<Frame> {
+public class StompMessageEncoderDecoder implements MessageEncoderDecoder<Frame> {
 
     private byte[] bytes = new byte[1 << 10]; //start with 1k
     private int len = 0;

@@ -1,7 +1,7 @@
 package bgu.spl.net.srv;
 
 import bgu.spl.net.api.StompMessagingProtocolImpl;
-import bgu.spl.net.api.StomptMessageEncoderDecoder;
+import bgu.spl.net.api.StompMessageEncoderDecoder;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -11,13 +11,13 @@ public abstract class BaseServer<T> implements Server<T> {
 
     private final int port;
     private final Supplier<StompMessagingProtocolImpl> protocolFactory;
-    private final Supplier<StomptMessageEncoderDecoder> encdecFactory;
+    private final Supplier<StompMessageEncoderDecoder> encdecFactory;
     private ServerSocket sock;
 
     public BaseServer(
             int port,
             Supplier<StompMessagingProtocolImpl> protocolFactory,
-            Supplier<StomptMessageEncoderDecoder> encdecFactory) {
+            Supplier<StompMessageEncoderDecoder> encdecFactory) {
 
         this.port = port;
         this.protocolFactory = protocolFactory;

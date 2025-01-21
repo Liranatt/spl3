@@ -1,7 +1,7 @@
 package bgu.spl.net.srv;
 
 import bgu.spl.net.api.StompMessagingProtocolImpl;
-import bgu.spl.net.api.StomptMessageEncoderDecoder;
+import bgu.spl.net.api.StompMessageEncoderDecoder;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.ClosedSelectorException;
@@ -16,7 +16,7 @@ public class Reactor<T> implements Server<T> {
 
     private final int port;
     private final Supplier<StompMessagingProtocolImpl> protocolFactory;
-    private final Supplier<StomptMessageEncoderDecoder> readerFactory;
+    private final Supplier<StompMessageEncoderDecoder> readerFactory;
     private final ActorThreadPool pool;
     private Selector selector;
 
@@ -27,7 +27,7 @@ public class Reactor<T> implements Server<T> {
             int numThreads,
             int port,
             Supplier<StompMessagingProtocolImpl> protocolFactory,
-            Supplier<StomptMessageEncoderDecoder> readerFactory) {
+            Supplier<StompMessageEncoderDecoder> readerFactory) {
 
         this.pool = new ActorThreadPool(numThreads);
         this.port = port;
