@@ -61,20 +61,22 @@ public class BlockingConnectionHandler<T> implements Runnable, ConnectionHandler
 
     @Override
     public void send(T msg) {
-        byte[] bytes = encdec.encode((Frame) msg);
-        try {
-            out.write(bytes);
-        } catch (IOException e) {
-            System.out.println(e.getMessage());
-        }
-        if (msg instanceof ErrorFrame) {
+        if (msg != null & connected) {
             try {
-                close();
+                synchronized (out) {
+                    out.write(encdec.encode((Frame) msg));
+                    out.flush();
+                }
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                System.out.println(e.getMessage());
+            }
+            if (msg instanceof ErrorFrame) {
+                try {
+                    close();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
             }
         }
-        //IMPLEMENT IF NEEDED
-        System.out.println("BlockingConnectionHandler.send() has been called");
     }
 }

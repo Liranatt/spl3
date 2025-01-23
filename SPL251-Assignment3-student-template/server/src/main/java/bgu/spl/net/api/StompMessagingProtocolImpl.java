@@ -1,9 +1,6 @@
 package bgu.spl.net.api;
 
-import bgu.spl.net.impl.stomp.Frames.ErrorFrame;
-import bgu.spl.net.impl.stomp.Frames.Frame;
-import bgu.spl.net.impl.stomp.Frames.MessageFrame;
-import bgu.spl.net.impl.stomp.Frames.ReceiptFrame;
+import bgu.spl.net.impl.stomp.Frames.*;
 import bgu.spl.net.srv.Connections;
 import bgu.spl.net.srv.ConnectionsImpl;
 
@@ -27,14 +24,13 @@ public class StompMessagingProtocolImpl implements StompMessagingProtocol<Frame>
 
     @Override
     public void process(Frame message) {
-        System.out.println("arrived here:\n" + message.toString());
         switch (message.getCommand()) {
             case "CONNECT":
-                if (!"1.2".equals(message.getHeaders().get("accept - version"))) {
+                if ( !message.getHeaders().containsKey("accept-version") || !message.getHeaders().get("accept-version").equals("1.2") ) {
                     sendError("accept - version is not valid", message);
                     break;
                 }
-                if (!"stomp.cs.bgu.ac.il".equals(message.getHeaders().get("host"))) {
+                if (!message.getHeaders().containsKey("host") || !message.getHeaders().get("host").equals("stomp.cs.bgu.ac.il")) {
                     sendError("host name is not valid", message);
                     break;
                 }
@@ -44,6 +40,7 @@ public class StompMessagingProtocolImpl implements StompMessagingProtocol<Frame>
                     sendError("login and passcode error, didn't found them or the login already exists", message);
                     break;
                 }
+                connections.send(connectionId, new ConnectedFrame());
                 break;
             case "SEND":
                 String sendTopic = message.getHeaders().get("destination");
@@ -70,7 +67,7 @@ public class StompMessagingProtocolImpl implements StompMessagingProtocol<Frame>
                         try {
                             topicsIds.put(subsTopic, Integer.parseInt(message.getHeaders().get("id")));
                         } catch (NumberFormatException e) {
-                            System.out.println("server received SUBSCRIBE frame with illegal number format in id header");
+                            sendError("illegal number in id header in SUBSCRIBE message", message);
                         }
                     }
                 }
@@ -89,7 +86,6 @@ public class StompMessagingProtocolImpl implements StompMessagingProtocol<Frame>
                         sendError("wrong id header in UNSUBSCRIBE message", message);
                     }
                 } catch (NumberFormatException e) {
-                    System.out.println("server received UNSUBSCRIBE frame with illegal number format in id header");
                     sendError("did not contain id header which is REQUIRED for UNSUBSCRIBE message", message);
                 }
                 break;
@@ -101,7 +97,6 @@ public class StompMessagingProtocolImpl implements StompMessagingProtocol<Frame>
                     receipt.addHeader("receipt - id", receiptId + "");
                     connections.send(connectionId, receipt);
                 } catch (NumberFormatException e) {
-                    System.out.println("server received SUBSCRIBE frame with illegal number format");
                     sendError("did not contain id header which is REQUIRED for DISCONNECT message", message);
                 }
                 break;
@@ -115,7 +110,6 @@ public class StompMessagingProtocolImpl implements StompMessagingProtocol<Frame>
         error.addHeader("receipt - id", message.getHeaders().get("receipt")); // may not work if there isn't a receipt but still exception safe
         String body = "The message:\n-----" + message.getBody() + "-----\n" + errorMessage;
         error.addBody(body);
-        System.out.println(error);
         connections.send(connectionId, error);
         shouldTerminate = true;
     }

@@ -1,5 +1,7 @@
 package bgu.spl.net.srv;
 
+import bgu.spl.net.impl.stomp.Frames.Frame;
+
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -10,7 +12,7 @@ public class ConnectionsImpl<T> implements Connections<T> {
     private final ConcurrentHashMap<String, String> loginInformation;
 
     private static class singletonHolder {
-        private static final ConnectionsImpl<?> instance = new ConnectionsImpl<>();
+        private static final ConnectionsImpl<Frame> instance = new ConnectionsImpl<>();
     }
 
     @SuppressWarnings("unchecked")
@@ -22,9 +24,16 @@ public class ConnectionsImpl<T> implements Connections<T> {
         loginInformation = new ConcurrentHashMap<>();
     }
 
-    public void subscribeToChannel(int connectionId, String channel) {}
+    public void subscribeToChannel(int connectionId, String channel) {
+        channelsSubscription.putIfAbsent(channel, new ConcurrentLinkedQueue<>());
+        channelsSubscription.get(channel).add(connectionId);
+    }
 
-    public void unSubscribeFromChannel(int connectionId, String channel) {}
+    public void unSubscribeFromChannel(int connectionId, String channel) {
+        if (channelsSubscription.containsKey(channel)) {
+            channelsSubscription.get(channel).remove(connectionId);
+        }
+    }
 
     public boolean isSubscribed(int connectionId, String channel) {
         ConcurrentLinkedQueue<Integer> subscribes = channelsSubscription.get(channel);

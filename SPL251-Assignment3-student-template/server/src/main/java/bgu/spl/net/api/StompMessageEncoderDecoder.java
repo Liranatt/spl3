@@ -32,6 +32,8 @@ public class StompMessageEncoderDecoder implements MessageEncoderDecoder<Frame> 
         output.append("\n");
         output.append(message.getBody() + "\n");
         output.append('\0');
+//        System.out.println("output.toString().indexOf('\\0')     = " + output.toString().indexOf('\0'));
+//        System.out.println("output.toString().lastIndexOf('\\0') = " + output.toString().lastIndexOf('\0'));
         return output.toString().getBytes();
     }
 
