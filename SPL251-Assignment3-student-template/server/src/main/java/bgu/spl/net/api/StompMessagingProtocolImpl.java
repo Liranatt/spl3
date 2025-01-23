@@ -81,6 +81,7 @@ public class StompMessagingProtocolImpl implements StompMessagingProtocol<Frame>
                     String topic = getTopicFromId(unSubsId);
                     if (topic != null) {
                         connections.unSubscribeFromChannel(connectionId, topic);
+                        topicsIds.remove(topic);
                     }
                     else {
                         sendError("wrong id header in UNSUBSCRIBE message", message);
