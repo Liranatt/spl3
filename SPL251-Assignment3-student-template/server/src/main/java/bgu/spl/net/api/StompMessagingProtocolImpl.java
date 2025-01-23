@@ -27,18 +27,22 @@ public class StompMessagingProtocolImpl implements StompMessagingProtocol<Frame>
 
     @Override
     public void process(Frame message) {
+        System.out.println("arrived here:\n" + message.toString());
         switch (message.getCommand()) {
             case "CONNECT":
                 if (!"1.2".equals(message.getHeaders().get("accept - version"))) {
                     sendError("accept - version is not valid", message);
+                    break;
                 }
                 if (!"stomp.cs.bgu.ac.il".equals(message.getHeaders().get("host"))) {
                     sendError("host name is not valid", message);
+                    break;
                 }
                 String login = message.getHeaders().get("login");
                 String passcode = message.getHeaders().get("passcode");
                 if (login == null || passcode == null || !connections.addLogin(login, passcode)) {
                     sendError("login and passcode error, didn't found them or the login already exists", message);
+                    break;
                 }
                 break;
             case "SEND":
@@ -111,6 +115,7 @@ public class StompMessagingProtocolImpl implements StompMessagingProtocol<Frame>
         error.addHeader("receipt - id", message.getHeaders().get("receipt")); // may not work if there isn't a receipt but still exception safe
         String body = "The message:\n-----" + message.getBody() + "-----\n" + errorMessage;
         error.addBody(body);
+        System.out.println(error);
         connections.send(connectionId, error);
         shouldTerminate = true;
     }

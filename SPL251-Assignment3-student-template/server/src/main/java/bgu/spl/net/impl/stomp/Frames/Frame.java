@@ -42,4 +42,18 @@ public abstract class Frame {
     public HashMap<String, String> getHeaders() {
         return headers;
     }
+
+    @Override
+    public String toString() {
+        StringBuilder output = new StringBuilder();
+        output.append(this.getCommand() + "\n");
+        for (String key: this.getHeaders().keySet()){
+            String value = this.getHeaders().get(key);
+            output.append(key+":"+value+"\n");
+        }
+        output.append("\n");
+        output.append(this.getBody() + "\n");
+        output.append('\0');
+        return output.toString();
+    }
 }
