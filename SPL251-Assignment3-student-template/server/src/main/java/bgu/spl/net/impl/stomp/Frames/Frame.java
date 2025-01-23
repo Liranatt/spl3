@@ -11,7 +11,8 @@ public abstract class Frame {
         this.headers = new HashMap<>();
     }
     public void addHeader(String key, String value){
-        this.headers.put(key, value);
+        if (key != null && value != null)
+            this.headers.put(key, value);
     }
     public void addBody(String body){
         this.body = body;

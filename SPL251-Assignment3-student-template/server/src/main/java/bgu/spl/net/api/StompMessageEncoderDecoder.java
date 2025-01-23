@@ -67,7 +67,6 @@ public class StompMessageEncoderDecoder implements MessageEncoderDecoder<Frame> 
                 result = new DisconnectFrame();
                 break;
         }
-
         if (result != null) {
             while (message.indexOf('\n') != 0) {
                 String line = message.substring(0, message.indexOf('\n'));
@@ -76,7 +75,10 @@ public class StompMessageEncoderDecoder implements MessageEncoderDecoder<Frame> 
                 result.addHeader(line.substring(0,line.indexOf(':')), line.substring(line.indexOf(':') + 1));
                 message = message.substring(message.indexOf('\n') + 1);
             }
-            result.addBody(message.substring(1));
+            if (message.indexOf('\0') == -1)
+                result.addBody(message.substring(1));
+            else
+                result.addBody(message.substring(1, message.length()-1));
         }
         return result;
     }

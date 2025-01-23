@@ -2,6 +2,7 @@ package bgu.spl.net.srv;
 
 import bgu.spl.net.api.StompMessagingProtocolImpl;
 import bgu.spl.net.api.StompMessageEncoderDecoder;
+import bgu.spl.net.impl.stomp.Frames.ErrorFrame;
 import bgu.spl.net.impl.stomp.Frames.Frame;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -65,6 +66,13 @@ public class BlockingConnectionHandler<T> implements Runnable, ConnectionHandler
             out.write(bytes);
         } catch (IOException e) {
             System.out.println(e.getMessage());
+        }
+        if (msg instanceof ErrorFrame) {
+            try {
+                close();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
         //IMPLEMENT IF NEEDED
         System.out.println("BlockingConnectionHandler.send() has been called");

@@ -16,12 +16,12 @@ public class StompServer {
                 StompMessageEncoderDecoder::new //message encoder decoder factory
         ).serve();
 
-         Server.reactor(
-                 Runtime.getRuntime().availableProcessors(),
-                 7777, //port
-                 StompMessagingProtocolImpl::new, //protocol factory
-                 StompMessageEncoderDecoder::new //message encoder decoder factory
-         ).serve();
+//         Server.reactor(
+//                 Runtime.getRuntime().availableProcessors(),
+//                 7777, //port
+//                 StompMessagingProtocolImpl::new, //protocol factory
+//                 StompMessageEncoderDecoder::new //message encoder decoder factory
+//         ).serve();
         // TODO: implement this
     }
 }

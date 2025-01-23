@@ -5,8 +5,9 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class ConnectionsImpl<T> implements Connections<T> {
 
-    private ConcurrentHashMap<Integer, ConnectionHandler<T>> connectionHandlers;
-    private ConcurrentHashMap<String, ConcurrentLinkedQueue<Integer>> channelsSubscription;
+    private final ConcurrentHashMap<Integer, ConnectionHandler<T>> connectionHandlers;
+    private final ConcurrentHashMap<String, ConcurrentLinkedQueue<Integer>> channelsSubscription;
+    private final ConcurrentHashMap<String, String> loginInformation;
 
     private static class singletonHolder {
         private static final ConnectionsImpl<?> instance = new ConnectionsImpl<>();
@@ -18,28 +19,28 @@ public class ConnectionsImpl<T> implements Connections<T> {
     private ConnectionsImpl() {
         connectionHandlers = new ConcurrentHashMap<>();
         channelsSubscription = new ConcurrentHashMap<>();
+        loginInformation = new ConcurrentHashMap<>();
     }
 
     public void subscribeToChannel(int connectionId, String channel) {}
 
     public void unSubscribeFromChannel(int connectionId, String channel) {}
 
+    public boolean isSubscribed(int connectionId, String channel) {
+        ConcurrentLinkedQueue<Integer> subscribes = channelsSubscription.get(channel);
+        return channelsSubscription.get(channel) != null && subscribes.contains(connectionId);
+    }
+
     public void addConnection(ConnectionHandler<T> connection, int connectionId) {
         connectionHandlers.put(connectionId, connection);
     }
 
-    ///  saves the connection handler that called this method and returns its connection id
-//    public int connect(ConnectionHandler<T> connection) {
-//        connectionHandlers.put(connectionsCounter++, connection);
-//        return (connectionsCounter - 1);
-//    }
-//    public void connect(int connectionId) {
-//        if (connectionHandlers.containsKey(connectionId))
-//            System.out.println("ConnectionsImpl.ConnectFrame() has been called, already has a connectionId that equals = " + connectionId);
-//        else {
-//            System.out.println("ConnectionsImpl.ConnectFrame() has been called, connectionId = " + connectionId);
-//        }
-//    }
+    public boolean addLogin(String login, String passcode) {
+        if (loginInformation.containsKey(login))
+            return false;
+        loginInformation.put(login, passcode);
+        return true;
+    }
 
     @Override
     public boolean send(int connectionId, T msg) {
