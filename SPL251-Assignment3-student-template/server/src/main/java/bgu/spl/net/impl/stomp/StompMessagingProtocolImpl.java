@@ -100,8 +100,8 @@ public class StompMessagingProtocolImpl implements StompMessagingProtocol<Frame>
                 }
                 break;
             case "DISCONNECT":
-                connections.disconnect(connectionId);
                 checkAndSendReceipt(message);
+                connections.disconnect(connectionId);
                 if (!checkAndSendReceipt(message))
                     sendError("did not contain RECEIPT header which is REQUIRED for DISCONNECT message", message);
                 break;
