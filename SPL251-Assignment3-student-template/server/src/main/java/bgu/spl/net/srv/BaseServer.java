@@ -33,7 +33,7 @@ public abstract class BaseServer<T> implements Server<T> {
     public void serve() {
 
         try (ServerSocket serverSock = new ServerSocket(port)) {
-			System.out.println("Server started liran and nir rulez");
+			System.out.println("Base Server started liran and nir rulez");
 
             this.sock = serverSock; //just to be able to close
 

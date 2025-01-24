@@ -17,13 +17,11 @@ public class BlockingConnectionHandler<T> implements Runnable, ConnectionHandler
     private BufferedInputStream in;
     private BufferedOutputStream out;
     private volatile boolean connected = true;
-    private final int clientId;
 
     public BlockingConnectionHandler(Socket sock, StompMessageEncoderDecoder reader, StompMessagingProtocolImpl protocol, int clientId) {
         this.sock = sock;
         this.encdec = reader;
         this.protocol = protocol;
-        this.clientId = clientId;
         protocol.start(clientId, ConnectionsImpl.getInstance());
     }
 

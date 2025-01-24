@@ -12,7 +12,7 @@ public class ConnectionsImpl<T> implements Connections<T> {
     private final ConcurrentHashMap<String, String> loginInformation;
 
     private static class singletonHolder {
-        private static final ConnectionsImpl<Frame> instance = new ConnectionsImpl<>();
+        private static final ConnectionsImpl<?> instance = new ConnectionsImpl<>();
     }
 
     @SuppressWarnings("unchecked")
@@ -51,6 +51,12 @@ public class ConnectionsImpl<T> implements Connections<T> {
         return true;
     }
 
+    /**
+     * TODO add message-id:
+     * a server-unique id that for the message.
+     * To be picked by the server.
+     * maybe a global int
+     */
     @Override
     public boolean send(int connectionId, T msg) {
         ConnectionHandler<T> con = connectionHandlers.get(connectionId);

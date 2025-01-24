@@ -20,6 +20,7 @@ public class Reactor<T> implements Server<T> {
     private final ActorThreadPool pool;
     private Selector selector;
     private final ConnectionsImpl<T> connections;
+    private int numClients;
 
     private Thread selectorThread;
     private final ConcurrentLinkedQueue<Runnable> selectorTasks = new ConcurrentLinkedQueue<>();
@@ -35,6 +36,7 @@ public class Reactor<T> implements Server<T> {
         this.protocolFactory = protocolFactory;
         this.readerFactory = readerFactory;
         this.connections = ConnectionsImpl.getInstance();
+        numClients = 0;
     }
 
     @Override
@@ -48,7 +50,7 @@ public class Reactor<T> implements Server<T> {
             serverSock.bind(new InetSocketAddress(port));
             serverSock.configureBlocking(false);
             serverSock.register(selector, SelectionKey.OP_ACCEPT);
-			System.out.println("Server started liran and nir rulez");
+			System.out.println("Reactor Server started liran and nir rulez");
 
             while (!Thread.currentThread().isInterrupted()) {
 
@@ -101,8 +103,13 @@ public class Reactor<T> implements Server<T> {
                 readerFactory.get(),
                 protocolFactory.get(),
                 clientChan,
-                this);
+                this,
+                numClients);
+
+        connections.addConnection(handler, numClients);
+        numClients++;
         clientChan.register(selector, SelectionKey.OP_READ, handler);
+
 //        connections.addConnection(handler);
     }
 

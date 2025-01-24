@@ -26,11 +26,13 @@ public class NonBlockingConnectionHandler<T> implements ConnectionHandler<T> {
             StompMessageEncoderDecoder reader,
             StompMessagingProtocolImpl protocol,
             SocketChannel chan,
-            Reactor reactor) {
+            Reactor<T> reactor,
+            int clientId) {
         this.chan = chan;
         this.encdec = reader;
         this.protocol = protocol;
         this.reactor = reactor;
+        protocol.start(clientId, ConnectionsImpl.getInstance());
     }
 
     public Runnable continueRead() {
@@ -120,10 +122,10 @@ public class NonBlockingConnectionHandler<T> implements ConnectionHandler<T> {
 
     @Override
     public void send(T msg) {
-        ByteBuffer buf = leaseBuffer();
-//        buf.w
-//        writeQueue.add()
+        if (msg != null) {
+            writeQueue.add(ByteBuffer.wrap(encdec.encode((Frame) msg)));
+            reactor.updateInterestedOps(chan, SelectionKey.OP_READ | SelectionKey.OP_WRITE);
+        }
         //IMPLEMENT IF NEEDED
-        System.out.println("NonBlockingConnectionHandler.send() has been called");
     }
 }
