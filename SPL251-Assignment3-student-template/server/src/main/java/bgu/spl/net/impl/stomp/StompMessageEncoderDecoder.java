@@ -1,5 +1,6 @@
-package bgu.spl.net.api;
+package bgu.spl.net.impl.stomp;
 
+import bgu.spl.net.api.MessageEncoderDecoder;
 import bgu.spl.net.impl.stomp.Frames.*;
 
 import java.nio.charset.StandardCharsets;

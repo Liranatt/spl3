@@ -1,7 +1,7 @@
 package bgu.spl.net.srv;
 
-import bgu.spl.net.api.StompMessagingProtocolImpl;
-import bgu.spl.net.api.StompMessageEncoderDecoder;
+import bgu.spl.net.impl.stomp.StompMessagingProtocolImpl;
+import bgu.spl.net.impl.stomp.StompMessageEncoderDecoder;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.ClosedSelectorException;
