@@ -51,6 +51,7 @@ public class StompMessagingProtocolImpl implements StompMessagingProtocol<Frame>
                         newMsg.addHeader("destination", sendTopic);
                         newMsg.addBody(message.getBody());
                         connections.send(sendTopic, message); /// TODO: add headers: subscription + message - id;
+                        checkAndSendReceipt(message);
                     }
                     else {
                         sendError("you can't send a message to a topic you are not subscribed to", message);
@@ -64,6 +65,7 @@ public class StompMessagingProtocolImpl implements StompMessagingProtocol<Frame>
                 String subsTopic = message.getHeaders().get("destination");
                 if (subsTopic != null) {
                     connections.subscribeToChannel(connectionId, subsTopic);
+                    checkAndSendReceipt(message);
                     if (message.getHeaders().get("id") != null) {
                         try {
                             topicsIds.put(subsTopic, Integer.parseInt(message.getHeaders().get("id")));
@@ -82,6 +84,7 @@ public class StompMessagingProtocolImpl implements StompMessagingProtocol<Frame>
                     String topic = getTopicFromId(unSubsId);
                     if (topic != null) {
                         connections.unSubscribeFromChannel(connectionId, topic);
+                        checkAndSendReceipt(message);
                         topicsIds.remove(topic);
                     }
                     else {
@@ -93,17 +96,21 @@ public class StompMessagingProtocolImpl implements StompMessagingProtocol<Frame>
                 break;
             case "DISCONNECT":
                 connections.disconnect(connectionId);
-                try {
-                    int receiptId = Integer.parseInt(message.getHeaders().get("receipt"));
-                    ReceiptFrame receipt = new ReceiptFrame();
-                    receipt.addHeader("receipt - id", receiptId + "");
-                    connections.send(connectionId, receipt);
-                } catch (NumberFormatException e) {
-                    sendError("did not contain id header which is REQUIRED for DISCONNECT message", message);
-                }
+                checkAndSendReceipt(message);
+                if (!checkAndSendReceipt(message))
+                    sendError("did not contain RECEIPT header which is REQUIRED for DISCONNECT message", message);
                 break;
-
         }
+    }
+
+    private boolean checkAndSendReceipt(Frame message) {
+        if ( message.getHeaders().get("receipt") != null) {
+            ReceiptFrame receipt = new ReceiptFrame();
+            receipt.addHeader("receipt - id", message.getHeaders().get("receipt"));
+            connections.send(connectionId, receipt);
+            return true;
+        }
+        return false;
     }
 
     private void sendError(String errorMessage, Frame message) {

@@ -60,7 +60,8 @@ public class ConnectionsImpl<T> implements Connections<T> {
     @Override
     public boolean send(int connectionId, T msg) {
         ConnectionHandler<T> con = connectionHandlers.get(connectionId);
-        if (con != null) {
+        if (con != null & msg != null) {
+            System.out.println("Sending message to client:\n" + msg);
             con.send(msg);
             return true;
         }
