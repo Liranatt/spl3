@@ -45,9 +45,9 @@ public class ConnectionsImpl<T> implements Connections<T> {
     }
 
     public boolean addLogin(String login, String passcode) {
-        if (loginInformation.containsKey(login))
+        if (loginInformation.containsKey(login) && !loginInformation.get(login).equals(passcode))
             return false;
-        loginInformation.put(login, passcode);
+        loginInformation.putIfAbsent(login, passcode);
         return true;
     }
 

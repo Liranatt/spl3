@@ -28,17 +28,21 @@ public class StompMessagingProtocolImpl implements StompMessagingProtocol<Frame>
         switch (message.getCommand()) {
             case "CONNECT":
                 if ( !message.getHeaders().containsKey("accept-version") || !message.getHeaders().get("accept-version").equals("1.2") ) {
-                    sendError("accept - version is not valid", message);
+                    sendError("", "accept - version is not valid", message);
                     break;
                 }
                 if (!message.getHeaders().containsKey("host") || !message.getHeaders().get("host").equals("stomp.cs.bgu.ac.il")) {
-                    sendError("host name is not valid", message);
+                    sendError("", "host name is not valid", message);
                     break;
                 }
                 String login = message.getHeaders().get("login");
                 String passcode = message.getHeaders().get("passcode");
-                if (login == null || passcode == null || !connections.addLogin(login, passcode)) {
-                    sendError("login and passcode error, didn't found them or the login already exists", message);
+                if (login == null || passcode == null) {
+                    sendError("", "login and passcode are required", message);
+                    break;
+                }
+                else if (!connections.addLogin(login, passcode)) {
+                    sendError("", "wrong password", message);
                     break;
                 }
                 connections.send(connectionId, new ConnectedFrame());
@@ -114,10 +118,15 @@ public class StompMessagingProtocolImpl implements StompMessagingProtocol<Frame>
     }
 
     private void sendError(String errorMessage, Frame message) {
+        sendError(errorMessage, "malformed frame received", message);
+    }
+
+    private void sendError(String errorMessage, String errorHeader, Frame message) {
         ErrorFrame error = new ErrorFrame();
-        error.addHeader("message", "malformed frame received");
-        error.addHeader("receipt - id", message.getHeaders().get("receipt")); // may not work if there isn't a receipt but still exception safe
-        String body = "The message:\n-----" + message.getBody() + "-----\n" + errorMessage;
+        error.addHeader("message", errorHeader);
+        if (message.getHeaders().containsKey("receipt"))
+            error.addHeader("receipt - id", message.getHeaders().get("receipt"));
+        String body = "The message:\n-----\n" + message + "\n-----\n" + errorMessage;
         error.addBody(body);
         connections.send(connectionId, error);
         shouldTerminate = true;
