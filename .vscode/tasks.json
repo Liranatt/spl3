@@ -2,6 +2,15 @@
     "tasks": [
         {
             "type": "shell",
+            "label": "make StompClient",
+            "command": "make",
+            "args": ["StompClient"],
+            "options": {
+                "cwd": "${workspaceFolder}/client"
+            }
+        },
+        {
+            "type": "shell",
             "label": "make StompWCIClient",
             "command": "make",
             "args": ["StompWCIClient"],

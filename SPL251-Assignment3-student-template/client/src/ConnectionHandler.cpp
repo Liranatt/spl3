@@ -53,9 +53,6 @@ bool ConnectionHandler::getBytes(char bytes[], unsigned int bytesToRead) {
 bool ConnectionHandler::sendBytes(const char bytes[], int bytesToWrite) {
 	int tmp = 0;
 	boost::system::error_code error;
-	cout << "im sending bytes" << endl;
-	cout << "host_ = " << host_ << endl;
-	cout << "port_ = " << port_ << endl;
 	try {
 		while (!error && bytesToWrite > tmp) {
 			tmp += socket_.write_some(boost::asio::buffer(bytes + tmp, bytesToWrite - tmp), error);

@@ -3,17 +3,19 @@
 CFLAGS := -c -Wall -Weffc++ -g -std=c++11 -Iinclude
 LDFLAGS := -lboost_system -lpthread
 
-all: clean link
+all: clean run
 
-run: link
+StompClient: 
+	run
+
+run: bin/StompClient.o
 	bin/StompClient 127.0.0.1 7777
 
-link: compile
-	g++ -o bin/StompClient bin/ConnectionHandler.o bin/echoClient.o bin/event.o bin/FrameCodec.o bin/StompClient.o bin/StompProtocol.o $(LDFLAGS)
+bin/StompClient.o: compile
+	g++ -o bin/StompClient bin/ConnectionHandler.o  bin/event.o bin/FrameCodec.o bin/StompClient.o bin/StompProtocol.o $(LDFLAGS)
 
-compile: src/ConnectionHandler.cpp src/echoClient.cpp src/Facility.cpp src/event.cpp src/FrameCodec.cpp src/StompClient.cpp src/StompProtocol.cpp
+compile: src/ConnectionHandler.cpp src/echoClient.cpp src/event.cpp src/FrameCodec.cpp src/StompClient.cpp src/StompProtocol.cpp
 	g++ $(CFLAGS) -o bin/ConnectionHandler.o src/ConnectionHandler.cpp
-	g++ $(CFLAGS) -o bin/echoClient.o src/echoClient.cpp
 	g++ $(CFLAGS) -o bin/event.o src/event.cpp
 	g++ $(CFLAGS) -o bin/FrameCodec.o src/FrameCodec.cpp
 	g++ $(CFLAGS) -o bin/StompClient.o src/StompClient.cpp
@@ -23,6 +25,10 @@ compile: src/ConnectionHandler.cpp src/echoClient.cpp src/Facility.cpp src/event
 clean:
 	clear
 	rm -f bin/*
+
+
+# 	g++ $(CFLAGS) -o bin/echoClient.o src/echoClient.cpp
+# bin/echoClient.o
 
 ############################################# chatgpt template
 # CXX = g++

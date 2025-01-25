@@ -10,7 +10,7 @@ class Frame {
         std::string body;
 
     public:
-    Frame() = default;
+    Frame():command(), headers(), body() {} 
     Frame(const std::string& cmd):command(cmd), headers(), body() {}
 
     std::string getCommand() const {return command;}

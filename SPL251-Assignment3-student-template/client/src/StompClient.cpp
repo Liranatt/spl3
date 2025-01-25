@@ -2,7 +2,7 @@
 #include <string>
 #include "../include/ConnectionHandler.h"
 #include "../include/StompProtocol.h"
-#include "../include/keyboardInput.h"
+#include "keyboardInput.h"
 
 int main(int argc, char *argv[]) {
     if (argc < 3) {
@@ -21,7 +21,7 @@ int main(int argc, char *argv[]) {
 
     StompProtocol stompProtocol(connectionHandler);
 
-    try {
+    try { 
         std::string username = keyboardInput::getInput("Enter username: ");
         std::string password = keyboardInput::getInput("Enter password: ");
         stompProtocol.connect(username, password); 

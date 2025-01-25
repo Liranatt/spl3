@@ -14,6 +14,7 @@ public class StompMessageEncoderDecoder implements MessageEncoderDecoder<Frame> 
     @Override
     public Frame decodeNextByte(byte nextByte) {
         if (nextByte == '\0') {
+            System.out.println("entered here and len = " + len);
             return parseToFrame();
         }
 

@@ -7,7 +7,6 @@
 #include <vector>
 #include <sstream>
 #include <cstring>
-
 #include "../include/keyboardInput.h"
 
 using namespace std;

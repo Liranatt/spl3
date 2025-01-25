@@ -1,6 +1,7 @@
 #include "../include/FrameCodec.h"
 #include <sstream>
 #include <stdexcept>
+#include <iostream>
 
 std::string FrameCodec::encode(const Frame& frame) {
     std::ostringstream output;
@@ -12,8 +13,7 @@ std::string FrameCodec::encode(const Frame& frame) {
      if (!frame.getBody().empty()) {
         output << frame.getBody();
     }
-
-    output << '\0'; 
+    
     return output.str();
 }
 
