@@ -8,6 +8,8 @@ using std::cerr;
 using std::endl;
 using std::string;
 
+using namespace std;
+
 ConnectionHandler::ConnectionHandler(string host, short port) : host_(host), port_(port), io_service_(),
                                                                 socket_(io_service_) {}
 
@@ -16,7 +18,7 @@ ConnectionHandler::~ConnectionHandler() {
 }
 
 bool ConnectionHandler::connect() {
-	std::cout << "Starting connect to "
+	std::cout << "liran and nir rulllez Starting connect to "
 	          << host_ << ":" << port_ << std::endl;
 	try {
 		tcp::endpoint endpoint(boost::asio::ip::address::from_string(host_), port_); // the server endpoint
@@ -42,7 +44,7 @@ bool ConnectionHandler::getBytes(char bytes[], unsigned int bytesToRead) {
 		if (error)
 			throw boost::system::system_error(error);
 	} catch (std::exception &e) {
-		std::cerr << "recv failed (Error: " << e.what() << ')' << std::endl;
+		std::cerr << "recv failed in getBytes  (Error: " << e.what() << ')' << std::endl;
 		return false;
 	}
 	return true;
@@ -51,6 +53,9 @@ bool ConnectionHandler::getBytes(char bytes[], unsigned int bytesToRead) {
 bool ConnectionHandler::sendBytes(const char bytes[], int bytesToWrite) {
 	int tmp = 0;
 	boost::system::error_code error;
+	cout << "im sending bytes" << endl;
+	cout << "host_ = " << host_ << endl;
+	cout << "port_ = " << port_ << endl;
 	try {
 		while (!error && bytesToWrite > tmp) {
 			tmp += socket_.write_some(boost::asio::buffer(bytes + tmp, bytesToWrite - tmp), error);
@@ -58,7 +63,7 @@ bool ConnectionHandler::sendBytes(const char bytes[], int bytesToWrite) {
 		if (error)
 			throw boost::system::system_error(error);
 	} catch (std::exception &e) {
-		std::cerr << "recv failed (Error: " << e.what() << ')' << std::endl;
+		std::cerr << "recv failed in sendBytes (Error: " << e.what() << ')' << std::endl;
 		return false;
 	}
 	return true;

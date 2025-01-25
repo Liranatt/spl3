@@ -9,7 +9,7 @@ class StompProtocol {
     private:
     ConnectionHandler& connectionHandler;
     bool connected;
-    int subcriptionIdCounter;
+    int subscriptionIdCounter;
     int receiptIdCounter;
     std::map<int, std::string> subscriptions;
 

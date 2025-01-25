@@ -1,7 +1,9 @@
-#include "StompProtocol.h"
-#include "FrameCodec.h"
+#include "../include/StompProtocol.h"
+#include "../include/FrameCodec.h"
 #include <stdexcept>
 #include <iostream>
+
+using namespace std;
 
 StompProtocol::StompProtocol(ConnectionHandler& handler)
     : connectionHandler(handler), connected(false), subscriptionIdCounter(0), receiptIdCounter(0) {}
@@ -24,7 +26,10 @@ void StompProtocol::connect(const std::string& username, const std::string& pass
 
     std::string response;
     connectionHandler.getFrameAscii(response, '\0');
+    cout << "response:" << endl << response << endl;
     Frame responseFrame = FrameCodec::decode(response);
+    cout << "recieved command:" << endl << responseFrame.getCommand() << endl;
+    cout << "recieved body:" << endl << responseFrame.getBody() << endl;
 
     if (responseFrame.getCommand() == "CONNECTED") {
         connected = true;
@@ -45,7 +50,6 @@ void StompProtocol::subscribe(const std::string& topic) {
     Frame subscribeFrame("SUBSCRIBE");
     subscribeFrame.addHeader("destination", topic);
     subscribeFrame.addHeader("id", std::to_string(subscriptionId));
-    subscribeFrame.addHeader("ack", "auto");
 
     std::string encodedFrame = FrameCodec::encode(subscribeFrame);
     connectionHandler.sendFrameAscii(encodedFrame, '\0');

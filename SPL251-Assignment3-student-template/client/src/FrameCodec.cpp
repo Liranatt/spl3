@@ -1,8 +1,8 @@
-#include "FrameCodec.h"
+#include "../include/FrameCodec.h"
 #include <sstream>
 #include <stdexcept>
 
-std::string FrameCodec:: encode(const Frame& frame) {
+std::string FrameCodec::encode(const Frame& frame) {
     std::ostringstream output;
     output << frame.getCommand() << "\n";
     for (const auto& header : frame.getHeaders()) {
@@ -18,11 +18,15 @@ std::string FrameCodec:: encode(const Frame& frame) {
 }
 
 Frame FrameCodec::decode(const std::string& frameString) {
-    std::istringstream input(framestring);
+    std::istringstream input(frameString);
     std::string line;
     Frame frame;
-    frame.setCommand(line);
+    bool foundCommand = false;
     while (std::getline(input, line) && !line.empty()) {
+        if (!foundCommand) {
+            frame.setCommand(line);
+            foundCommand = true;
+        }
         size_t separatorPos = line.find(':');
         std::string key = line.substr(0, separatorPos);
         std::string value = line.substr(separatorPos + 1);
