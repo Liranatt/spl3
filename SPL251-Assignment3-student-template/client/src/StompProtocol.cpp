@@ -1,99 +1,103 @@
-#include "../include/StompProtocol.h"
-#include "../include/ConnectFrame.h"
-#include "SubscribeFrame.h"
-#include "UnsubscribedFrame.h"
-#include "SendFrame.h"
-#include "DisconnectFrame.h"
+#include "StompProtocol.h"
+#include "FrameCodec.h"
 #include <stdexcept>
 #include <iostream>
 
-
-StompProtocol::StompProtocol(ConnectionHandler& handler):
-ConnectionHander(handler), connected(false), subscriptionIdCounter(0), receiptIdCounter(0){}
+StompProtocol::StompProtocol(ConnectionHandler& handler)
+    : connectionHandler(handler), connected(false), subscriptionIdCounter(0), receiptIdCounter(0) {}
 
 StompProtocol::~StompProtocol() {}
 
-void StompProtocol::connect(const std::String& username, const std::string& password){
-    if (connected){
-        throw std::runtime_error("Already connected");
+void StompProtocol::connect(const std::string& username, const std::string& password) {
+    if (connected) {
+        throw std::runtime_error("Already connected.");
     }
 
-    ConnectFrame frame(username, password);
-    std::string encodedFrame = frame.encode();
+    Frame connectFrame("CONNECT");
+    connectFrame.addHeader("login", username);
+    connectFrame.addHeader("passcode", password);
+    connectFrame.addHeader("accept-version", "1.2");
+    connectFrame.addHeader("host", "stomp.cs.bgu.ac.il");
+
+    std::string encodedFrame = FrameCodec::encode(connectFrame);
     connectionHandler.sendFrameAscii(encodedFrame, '\0');
+
     std::string response;
-    connectionHnadler.getFrameAscii(response, '\0');
-    handleFrame(response);
+    connectionHandler.getFrameAscii(response, '\0');
+    Frame responseFrame = FrameCodec::decode(response);
+
+    if (responseFrame.getCommand() == "CONNECTED") {
+        connected = true;
+        std::cout << "Connected to STOMP server." << std::endl;
+    } else {
+        throw std::runtime_error("Failed to connect: " + responseFrame.getBody());
+    }
 }
 
 void StompProtocol::subscribe(const std::string& topic) {
     if (!connected) {
-        throw std::runtime_error("Not connected");
+        throw std::runtime_error("Not connected.");
     }
 
-    int subscripionId = subscriptionIdCounter++;
-    subscriptions[subscripionId] = topic;
-    SubscribeFrame frame(topic, subscriptionId);
-    std::string encodedFrame = frame.encode();
-    ConnectionHandler.sendFrameAscii(encodedFrame, '/0');
+    int subscriptionId = subscriptionIdCounter++;
+    subscriptions[subscriptionId] = topic;
+
+    Frame subscribeFrame("SUBSCRIBE");
+    subscribeFrame.addHeader("destination", topic);
+    subscribeFrame.addHeader("id", std::to_string(subscriptionId));
+    subscribeFrame.addHeader("ack", "auto");
+
+    std::string encodedFrame = FrameCodec::encode(subscribeFrame);
+    connectionHandler.sendFrameAscii(encodedFrame, '\0');
+
+    std::cout << "Subscribed to topic: " << topic << std::endl;
 }
 
 void StompProtocol::unsubscribe(const std::string& topic) {
-    if (!connected){
-        throw std::runtime_error("Not connected")''
+    if (!connected) {
+        throw std::runtime_error("Not connected.");
     }
 
-    for (const auto& [id, subscribedTopic]: subscriptions){
-        if (subscribedTopic == topic){
-            UnsubscribedFrame frame(id);
+    for (const auto& [id, subscribedTopic] : subscriptions) {
+        if (subscribedTopic == topic) {
+            Frame unsubscribeFrame("UNSUBSCRIBE");
+            unsubscribeFrame.addHeader("id", std::to_string(id));
+            std::string encodedFrame = FrameCodec::encode(unsubscribeFrame);
+            connectionHandler.sendFrameAscii(encodedFrame, '\0');
             subscriptions.erase(id);
-            std::string encodedFrame = frame.encode();
-            ConnectionHandler.sendFramesAscii(encodedFrame, '\0');
+
+            std::cout << "Unsubscribed from topic: " << topic << std::endl;
             return;
         }
     }
-    throw std::runtime_error("Topic not subscribed");
+
+    throw std::runtime_error("Topic not subscribed: " + topic);
 }
 
-void StompProtocol::send(const std::string& topic, const std::string& message){
-     if (!connected){
-        throw std::runtime_error("Not connected")''
+void StompProtocol::send(const std::string& topic, const std::string& message) {
+    if (!connected) {
+        throw std::runtime_error("Not connected.");
     }
 
-    SendFrame Frame(topic, message);
-    std::string encodedFrame = frame.encode();
+    Frame sendFrame("SEND");
+    sendFrame.addHeader("destination", topic);
+    sendFrame.setBody(message);
+
+    std::string encodedFrame = FrameCodec::encode(sendFrame);
     connectionHandler.sendFrameAscii(encodedFrame, '\0');
+
+    std::cout << "Message sent to topic: " << topic << std::endl;
 }
 
 void StompProtocol::disconnect() {
-     if (!connected){
-        throw std::runtime_error("Not connected")''
+    if (!connected) {
+        throw std::runtime_error("Not connected.");
     }
 
-    DisconnectFrame frame;
-    std::string encodedFrame = frame.encode();
-    ConnectionHandler.sendFrameAscii(encodedFrame, '\0');
+    Frame disconnectFrame("DISCONNECT");
+    std::string encodedFrame = FrameCodec::encode(disconnectFrame);
+    connectionHandler.sendFrameAscii(encodedFrame, '\0');
     connected = false;
+
+    std::cout << "Disconnected from server." << std::endl;
 }
-
-void StompProtocol::handleFrame(const std::string& frame) {
-    std::istringstream stream(frame);
-    std::string command;
-    std::getline(stream, command);
-
-    if (command == "CONNECTED"){
-        connected = true;
-        std::cout << "Connected Succesfully" << std::endl;
-    }
-    else if (command == "MESSAGE") {
-        std::cout << "New message received: " << frame << std::endl;
-    }
-    else if (command == "RECEIPT") {
-    std::cout << "Receipt acknowledged: " << frame << std::endl;
-    }
-    else if (command == "ERROR") {
-    std::cerr << "Error received: " << frame << std::endl;
-    }   
-}
-
-
