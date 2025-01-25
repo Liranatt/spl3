@@ -13,6 +13,14 @@
 using namespace std;
 using json = nlohmann::json;
 
+void split_str(const std::string &str, char delimiter, std::vector<std::string> &tokens) {
+    std::stringstream ss(str);
+    std::string token;
+    while (std::getline(ss, token, delimiter)) {
+        tokens.push_back(token);
+    }
+}
+
 Event::Event(std::string channel_name, std::string city, std::string name, int date_time,
              std::string description, std::map<std::string, std::string> general_information)
     : channel_name(channel_name), city(city), name(name),

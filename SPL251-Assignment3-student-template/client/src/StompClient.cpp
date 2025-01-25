@@ -2,7 +2,7 @@
 #include <string>
 #include "../include/ConnectionHandler.h"
 #include "../include/StompProtocol.h"
-#include "KeyboardInput.h"
+#include "../include/keyboardInput.h"
 
 int main(int argc, char *argv[]) {
     if (argc < 3) {
@@ -22,25 +22,25 @@ int main(int argc, char *argv[]) {
     StompProtocol stompProtocol(connectionHandler);
 
     try {
-        std::string username = KeyboardInput::getInput("Enter username: ");
-        std::string password = KeyboardInput::getInput("Enter password: ");
+        std::string username = keyboardInput::getInput("Enter username: ");
+        std::string password = keyboardInput::getInput("Enter password: ");
         stompProtocol.connect(username, password); 
         std::string userInput;
         while (true) {
-            userInput = KeyboardInput::getInput("Enter command: ");
+            userInput = keyboardInput::getInput("Enter command: ");
 
             if (userInput == "exit") {
                 stompProtocol.disconnect();
                 break;
-            } else if (userInput.starts_with("subscribe")) {
+            } else if (userInput.find("subscribe") == 0) {
                 std::string topic = userInput.substr(10); 
                 stompProtocol.subscribe(topic);
-            } else if (userInput.starts_with("send")) {
+            } else if (userInput.find("send")  == 0) {
                 size_t spacePos = userInput.find(" ");
                 std::string topic = userInput.substr(5, spacePos - 5); 
                 std::string message = userInput.substr(spacePos + 1); 
                 stompProtocol.send(topic, message);
-            } else if (userInput.starts_with("unsubscribe")) {
+            } else if (userInput.find("unsubscribe")  == 0) {
                 std::string topic = userInput.substr(12); 
                 stompProtocol.unsubscribe(topic);
             } else {
