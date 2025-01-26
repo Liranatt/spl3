@@ -95,6 +95,9 @@ void StompProtocol::send(const std::string& topic, const std::string& message) {
     Frame sendFrame("SEND");
     sendFrame.addHeader("destination", topic);
     sendFrame.setBody(message);
+    sendFrame.addHeader("reciept", std::to_string(receiptIdCounter));
+    sentMessages[receiptIdCounter] = sendFrame;
+    receiptIdCounter++;
 
     std::string encodedFrame = FrameCodec::encode(sendFrame);
     connectionHandler.sendFrameAscii(encodedFrame, '\0');
@@ -125,22 +128,20 @@ std::string StompProtocol::processFromKeyboard(std::string userInput) {
     if (line[0] == "login" ) {
 
     }
-    if (userInput == "exit") {
+    else if (line[0] == "summery" ) {
+
+    }
+    else if (line[0] == "exit") {
         disconnect();
         return "";
     } else if (userInput.find("subscribe") == 0) {
-        string topic = userInput.substr(10); 
-        subscribe(topic);
+        subscribe(line[1]);
         return "";
     } else if (userInput.find("send")  == 0) {
-        size_t spacePos = userInput.find(" ");
-        string topic = userInput.substr(5, spacePos - 5); 
-        string message = userInput.substr(spacePos + 1); 
-        send(topic, message);
+        send(line[1], line[2]);
         return "";
     } else if (userInput.find("unsubscribe")  == 0) {
-        string topic = userInput.substr(12); 
-        unsubscribe(topic);
+        unsubscribe(line[1]);
         return "";
     } else {
         return "Unknown command: " + userInput ;
@@ -172,7 +173,16 @@ void StompProtocol::processFromServer(Frame message) {
         std::cout << "Connected to STOMP server." << std::endl;
     }
     else if (message.getCommand() == "RECEIPT") {
+        int recepitId = stoi(message.getHeaders()["receipt-id"]);
+        if (sentMessages[recepitId].getCommand() == "SUBSCRIBE") {
 
+        }
+        if (sentMessages[recepitId].getCommand() == "UNSUBSCRIBE") {
+            
+        }
+        if (sentMessages[recepitId].getCommand() == "SEND") {
+            
+        }
     }
     else if (message.getCommand() == "ERROR") {
 

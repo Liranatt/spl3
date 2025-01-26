@@ -16,7 +16,7 @@ class StompProtocol {
         std::map<int, std::string> subscriptions;
         mutex dataReceivedLock;
         map<string, map<string, vector<Event>>>* dataReceived;
-        map<int, string> recieptDes;
+        map<int, Frame> sentMessages;
         
 
     public:
