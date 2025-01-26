@@ -29,7 +29,10 @@ int main(int argc, char *argv[]) {
     StompProtocol stompProtocol(connectionHandler);
 
     // listen to Socket And Process From Server
-    thread socketThread( [&stompProtocol, &connectionHandler]( ) -> {
+    thread socketThread( [&stompProtocol, &connectionHandler ]( ) {
+        while (!stompProtocol.isConnected()) {
+            sleep(97);
+        }
         while (!stompProtocol.shouldTerminate()) { ///TODO change the condition
             std::string response;
             connectionHandler.getFrameAscii(response, '\0');
@@ -39,19 +42,11 @@ int main(int argc, char *argv[]) {
 
     while (!stompProtocol.shouldTerminate()) {
         string userInput = KeyboardInput::getInput("Enter command: ");
-        string response = stompProtocol.processFromKeyboard(userInput);
-        if (response.length() > 0) 
-            cerr << response << endl;
+        if (!stompProtocol.processFromKeyboard(userInput)) 
+            cerr << "Unknown command: " << userInput << endl;
     }
 
-    // try { 
-    //     string username = KeyboardInput::getInput("Enter username: ");
-    //     string password = KeyboardInput::getInput("Enter password: ");
-    //     stompProtocol.connect(username, password); 
-
-    // } catch (const exception& e) {
-    //     cerr << "Error: " << e.what() << endl;
-    // }
+    socketThread.detach();
     socketThread.join();
 
     return 0;
