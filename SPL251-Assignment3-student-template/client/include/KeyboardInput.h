@@ -2,7 +2,7 @@
 #include <string>
 #include <iostream>
 
-class keyboardInput {
+class KeyboardInput {
     public:
         static std::string getInput(const std::string&prompt) {
             std::cout << prompt;

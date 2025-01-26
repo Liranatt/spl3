@@ -70,7 +70,18 @@
         "ranges": "cpp",
         "stop_token": "cpp",
         "cinttypes": "cpp",
-        "*.ipp": "cpp"
+        "*.ipp": "cpp",
+        "csetjmp": "cpp",
+        "cfenv": "cpp",
+        "charconv": "cpp",
+        "coroutine": "cpp",
+        "cuchar": "cpp",
+        "unordered_set": "cpp",
+        "regex": "cpp",
+        "numbers": "cpp",
+        "scoped_allocator": "cpp",
+        "shared_mutex": "cpp",
+        "span": "cpp"
     },
     "makefile.makefilePath": "client/"
 }

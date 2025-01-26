@@ -2,13 +2,25 @@
 #include "../include/FrameCodec.h"
 #include <stdexcept>
 #include <iostream>
+#include <string>
+#include <bits/stdc++.h>
+
 
 using namespace std;
 
 StompProtocol::StompProtocol(ConnectionHandler& handler)
-    :connectionHandler(handler), connected(false), subscriptionIdCounter(0), receiptIdCounter(0), subscriptions() {}
+    :connectionHandler(handler),
+    connected(false), 
+    shouldTerminateBool(false), 
+    subscriptionIdCounter(0), 
+    receiptIdCounter(0), 
+    subscriptions(), 
+    dataReceivedLock(), 
+    dataReceived()  {}
 
-StompProtocol::~StompProtocol() {}
+StompProtocol::~StompProtocol() {
+    delete dataReceived;
+}
 
 void StompProtocol::connect(const std::string& username, const std::string& password) {
     if (connected) {
@@ -101,4 +113,73 @@ void StompProtocol::disconnect() {
     connected = false;
 
     std::cout << "Disconnected from server." << std::endl;
+}
+
+std::string StompProtocol::processFromKeyboard(std::string userInput) {
+    vector<string> line;
+    string argument;
+    while (stringstream(userInput) >> argument) {
+        line.push_back(argument);
+    }
+    
+    if (line[0] == "login" ) {
+
+    }
+    if (userInput == "exit") {
+        disconnect();
+        return "";
+    } else if (userInput.find("subscribe") == 0) {
+        string topic = userInput.substr(10); 
+        subscribe(topic);
+        return "";
+    } else if (userInput.find("send")  == 0) {
+        size_t spacePos = userInput.find(" ");
+        string topic = userInput.substr(5, spacePos - 5); 
+        string message = userInput.substr(spacePos + 1); 
+        send(topic, message);
+        return "";
+    } else if (userInput.find("unsubscribe")  == 0) {
+        string topic = userInput.substr(12); 
+        unsubscribe(topic);
+        return "";
+    } else {
+        return "Unknown command: " + userInput ;
+    }
+}
+
+void StompProtocol::processFromServer(Frame message) {
+    if (message.getCommand() == "MESSAGE") {
+        Event event(message.getBody());
+        string channel = event.get_channel_name();
+        string user = event.getEventOwnerUser();
+        int time = event.get_date_time();
+        if (!channel.empty() & !user.empty() & time != 0) {
+            dataReceivedLock.lock();
+            (*dataReceived)[channel][user].push_back(event);
+            dataReceivedLock.unlock();
+            // the next code sort them by time;
+            // auto& userEvents = dataReceived[channel][user];
+            // userEvents.push_back(event);
+            // sort(userEvents.begin(), userEvents.end(), [](const Event& a, const Event& b) {
+            //     return a.get_date_time() < b.get_date_time();
+        }
+        else {
+            cout << "no topic or user or time in SEND Frame from server" << endl;
+        }
+    }
+    else if (message.getCommand() == "CONNECTED") {
+        connected = true;
+        std::cout << "Connected to STOMP server." << std::endl;
+    }
+    else if (message.getCommand() == "RECEIPT") {
+
+    }
+    else if (message.getCommand() == "ERROR") {
+
+    }
+}
+
+
+bool StompProtocol::shouldTerminate() const {
+    return shouldTerminateBool;
 }

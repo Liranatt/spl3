@@ -8,11 +8,11 @@ all: clean run
 StompClient: 
 	run
 
-run: bin/StompClient.o
-	bin/StompClient 127.0.0.1 7777
+run: bin/StompEMIClient
+	bin/StompEMIClient 127.0.0.1 7777
 
-bin/StompClient.o: compile
-	g++ -o bin/StompClient bin/ConnectionHandler.o  bin/event.o bin/FrameCodec.o bin/StompClient.o bin/StompProtocol.o $(LDFLAGS)
+bin/StompEMIClient: compile
+	g++ -o bin/StompEMIClient bin/ConnectionHandler.o  bin/event.o bin/FrameCodec.o bin/StompClient.o bin/StompProtocol.o $(LDFLAGS)
 
 compile: src/ConnectionHandler.cpp src/echoClient.cpp src/event.cpp src/FrameCodec.cpp src/StompClient.cpp src/StompProtocol.cpp
 	g++ $(CFLAGS) -o bin/ConnectionHandler.o src/ConnectionHandler.cpp

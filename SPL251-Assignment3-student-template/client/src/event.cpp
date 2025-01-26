@@ -7,7 +7,7 @@
 #include <vector>
 #include <sstream>
 #include <cstring>
-#include "../include/keyboardInput.h"
+#include "../include/KeyboardInput.h"
 
 using namespace std;
 using json = nlohmann::json;
