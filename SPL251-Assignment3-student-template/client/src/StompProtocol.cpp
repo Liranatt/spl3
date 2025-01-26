@@ -117,15 +117,22 @@ bool StompProtocol::processFromKeyboard(std::string userInput){
     }
     if (line[0] == "login" ) {
         connect(line[1], line[2]);
+        return true;
     }
     else if (line[0] == "join"){
         subscribe(line[1]);
+        return true;
     }
     else if (line[0] == "exit"){
         unsubscribe(line[1]);
+        return true;
     }
-    else if (line[0] == "logout")
+    else if (line[0] == "logout"){
         disconnect();
+        return true;
+    }
+    return false;
+}
 
 bool StompProtocol::processFromKeyboardevent(std::string userInput) {
     vector<string> line;
