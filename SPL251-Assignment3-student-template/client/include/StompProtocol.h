@@ -31,6 +31,7 @@ class StompProtocol {
         ~StompProtocol();
 
         bool processFromKeyboard(std::string userInput);
+        bool processFromKeyboardevent(std::string userInput);
         void processFromServer(Frame message);
         bool shouldTerminate() const;
         bool isConnected() const;
