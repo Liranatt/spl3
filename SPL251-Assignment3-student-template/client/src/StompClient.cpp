@@ -26,18 +26,30 @@ int main(int argc, char *argv[]) {
         return -1;
     }
 
-    string host = argv[1];
-    short port = stoi(argv[2]);
-
     // ConnectionHandler connectionHandler;
     // StompProtocol stompProtocol;
 
-    
+
 
     bool connected = false;
     while (!connected) {
         string userInput = KeyboardInput::getInput("Enter command: ");
         vector<string> line;
+        string argument;
+        while (getline(stringstream(userInput), argument, ' ')) {
+            line.push_back(argument);
+            cout << "argument: " << argument << endl;
+        }
+         if (line.empty() || line[0] != "login") {
+            cerr << "Unknown command: " << userInput << endl;
+            continue;
+        }
+
+        // Check for correct login command structure
+        if (line.size() < 4) {
+            cerr << "Invalid login command" << endl;
+            continue;
+        }
         string argument;
         while (getline(stringstream(userInput), argument, ' ')) {
             line.push_back(argument);
@@ -50,7 +62,20 @@ int main(int argc, char *argv[]) {
             cout << "enteredHost: " << enteredHost << endl;
             cout << "enteredPort: " << to_string(enteredPort) << endl;
             try {
-                ConnectionHandler connectionHandler(enteredHost, enteredPort);
+                size_t colonPos = line[1].find(':');
+                if(colonPos == string::npos) {
+                    cerr << "Invalid host:port format" <<endl;
+                    continue;
+                }
+
+                string host = line[1].substr(0, colonPos);
+                short port = stoi(one[1].substr(colonPos + 1));
+
+                ConnectionHandler connectionHandler(host, port);
+                if(!connectionHandler.connect()){
+                    cerr << "Failed to connect" << endl;
+                    continue;
+                }
                 cout << "arrived here1" << endl;
                 StompProtocol stompProtocol(connectionHandler);
                 cout << "arrived here2" << endl;
@@ -69,7 +94,6 @@ int main(int argc, char *argv[]) {
                 //     }
                 // });
                 cout << "arrived here5" << endl;
-
                 while (!stompProtocol.shouldTerminate()) {
                     string userInput = KeyboardInput::getInput("Enter command: ");
                     if (!stompProtocol.processFromKeyboard(userInput))
@@ -81,6 +105,7 @@ int main(int argc, char *argv[]) {
                 cerr << "Error: " << e.what() << endl;
             }
         }
+        return 0;
     }
 
 
@@ -112,8 +137,7 @@ int main(int argc, char *argv[]) {
     // socketThread.detach();
     // socketThread.join();
 
-    return 0;
-}
+
 
 
 /////////////////////////////////////////////////////////// old version

@@ -28,7 +28,7 @@ void StompProtocol::connect(const std::string& username, const std::string& pass
     if (connected){
         std::cout<<"The client is already logged in, log out before trying again";
     }
-    connected = true;
+   
     Frame connectFrame("CONNECT");
     connectFrame.addHeader("accept-version", "1.2");
     connectFrame.addHeader("host", "stomp.cs.bgu.ac.il");
@@ -36,8 +36,12 @@ void StompProtocol::connect(const std::string& username, const std::string& pass
     connectFrame.addHeader("passcode", password);
 
     std::string encodedFrame = FrameCodec::encode(connectFrame);
-    connectionHandler.sendFrameAscii(encodedFrame, '\0');
+    if(!connectionHandler.sendFrameAscii(encodedFrame, '\0')){
+        cerr<< "failed to send connect frame" << endl;
+    }
+    std::cout<<"Connect Frame Sent " << std::endl;
     sentIdCounter++;
+    connected = true;
 }
 
 void StompProtocol::subscribe(const std::string& topic){
