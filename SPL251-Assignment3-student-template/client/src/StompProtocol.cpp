@@ -107,10 +107,12 @@ void StompProtocol::disconnect(){
 }
 
 bool StompProtocol::processFromKeyboard(std::string userInput){
+    cout << "arrived to processFromKeyboard, userInput = " << userInput << endl;
     vector<string> line;
     string argument;
-    while (stringstream(userInput) >> argument){
+    while (getline(stringstream(userInput), argument, ' ')) {
         line.push_back(argument);
+        cout << "argument: " << argument << endl;
     }
     if (line[0] == "login" ) {
         cout << "arrived login " << line[1] << " " << line[2] << endl;

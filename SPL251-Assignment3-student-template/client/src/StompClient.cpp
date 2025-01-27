@@ -31,16 +31,18 @@ int main(int argc, char *argv[]) {
 
     // ConnectionHandler connectionHandler;
     // StompProtocol stompProtocol;
+
+    
+
     bool connected = false;
     while (!connected) {
         string userInput = KeyboardInput::getInput("Enter command: ");
         vector<string> line;
         string argument;
-        split_str2(userInput, ' ', line);
-        // while (stringstream(userInput) >> argument){
-        //     line.push_back(argument);
-        //     cout << "argument: " << argument << endl;
-        // }
+        while (getline(stringstream(userInput), argument, ' ')) {
+            line.push_back(argument);
+            cout << "argument: " << argument << endl;
+        }
         if (line[0] == "login") {
             size_t spacePos = line[1].find(":");
             string enteredHost = line[1].substr(0, spacePos);
