@@ -33,7 +33,7 @@ int main(int argc, char *argv[]) {
         while (!stompProtocol.isConnected()) {
             sleep(97);
         }
-        while (!stompProtocol.shouldTerminate()) { ///TODO change the condition
+        while (!stompProtocol.shouldTerminate() & stompProtocol.isConnected()) { 
             std::string response;
             connectionHandler.getFrameAscii(response, '\0');
             stompProtocol.processFromServer(FrameCodec::decode(response));

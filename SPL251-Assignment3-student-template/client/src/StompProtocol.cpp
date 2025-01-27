@@ -17,17 +17,14 @@ StompProtocol::StompProtocol(ConnectionHandler& handler)
     connected(false), 
     shouldTerminateBool(false), 
     subscriptionIdCounter(0), 
-    receiptIdCounter(0), 
+    sentIdCounter(0), 
     subscriptions(),
     dataReceivedLock(), 
     dataReceived(),
     sentMessages()  {}
-   \\might cause problems because of map <string, int> and not the other way around when we try to delete
-StompProtocol::~StompProtocol() {
-    // delete dataReceived;
-}
+   //might cause problems because of map <string, int> and not the other way around when we try to delete
 
-void StompProtocol::connect(const std::string& username, const std::string& password){
+void StompProtocol::connect(const std::string& hostPort, const std::string& username, const std::string& password){
     if (connected){
         std::cout<<"The client is already logged in, log out before trying again";
     }
@@ -75,7 +72,7 @@ void StompProtocol::unsubscribe(const std::string& topic){
     connectionHandler.sendFrameAscii(encodedFrame, '\0');
     subscriptions.erase(topic); 
     
-    \\ subscriptionidCounter-- ? = put into processFromServer
+    // subscriptionidCounter-- ? = put into processFromServer
 
 }
 
@@ -87,9 +84,9 @@ void StompProtocol::send(const std::string& topic, const std::string& message) {
     Frame sendFrame("SEND");
     sendFrame.addHeader("destination", topic);
     sendFrame.setBody(message);
-    sendFrame.addHeader("reciept", std::to_string(receiptIdCounter));
-    sentMessages[receiptIdCounter] = sendFrame;
-    receiptIdCounter++;
+    sendFrame.addHeader("reciept", std::to_string(sentIdCounter));
+    sentMessages[sentIdCounter] = sendFrame;
+    sentIdCounter++;
 
     std::string encodedFrame = FrameCodec::encode(sendFrame);
     connectionHandler.sendFrameAscii(encodedFrame, '\0');
@@ -98,25 +95,25 @@ void StompProtocol::send(const std::string& topic, const std::string& message) {
 }
 
 void StompProtocol::disconnect(){
-    if (!connect){
+    if (!isConnected()){
         std::cout<<"The client is not connected";
     }
     sentIdCounter++;
-    connect = false;
+    connected = false;
     Frame disconnectframe("DISCONNECT");
     disconnectframe.addHeader("receipt", std::to_string(sentIdCounter));
     subscriptions.clear(); //clean all the subscriptions
-    ~StompProtocol();
+    this->~StompProtocol();
 }
 
 bool StompProtocol::processFromKeyboard(std::string userInput){
     vector<string> line;
     string argument;
-    while (stringstream(userinput >> argument){
+    while (stringstream(userInput) >> argument){
         line.push_back(argument);
     }
     if (line[0] == "login" ) {
-        connect(line[1], line[2]);
+        connect(line[1], line[2], line[3]);
         return true;
     }
     else if (line[0] == "join"){
@@ -131,47 +128,21 @@ bool StompProtocol::processFromKeyboard(std::string userInput){
         disconnect();
         return true;
     }
-    return false;
-}
-
-bool StompProtocol::processFromKeyboardevent(std::string userInput) {
-    vector<string> line;
-    string argument;
-    while (stringstream(userInput) >> argument) {
-        line.push_back(argument);
-    }
-    
-    if (line[0] == "login" ) {
-        connect(line[1], line[2]);
-    }
     else if (line[0] == "summary" ) { // nir
         ofstream outFile(line[3]);
         if (outFile.is_open()) {
             outFile << makeReportForSummary(line[1], line[2] );
             outFile.close();
             cout << "summary exported \n" ;
+            return true;
         }
         else {
-        cerr << "Failed to open the file!" << endl;
+            cerr << "Failed to open the file!" << endl;
+            return false;
         }
     }
     else if (line[0] == "report" ) { // nir
         
-    }
-    else if (line[0] == "exit") {
-        disconnect();
-        return true;
-    } else if (userInput.find("subscribe") == 0) {
-        subscribe(line[1]);
-        return true;
-    } else if (userInput.find("send")  == 0) {
-        send(line[1], line[2]);
-        return true;
-    } else if (userInput.find("unsubscribe")  == 0) {
-        unsubscribe(line[1]);
-        return true;
-    } else {
-        return false;
     }
     return false;
 }
@@ -198,10 +169,10 @@ void StompProtocol::processFromServer(Frame message) {
     else if (message.getCommand() == "RECEIPT") {
         int recepitId = stoi(message.getHeaders()["receipt-id"]);
         if (sentMessages[recepitId].getCommand() == "SUBSCRIBE") {
-            std::cout<<"joined channel " <<  sentMessages[recepitId] << std::endl;
+            std::cout<<"joined channel " <<  sentMessages[recepitId].getHeaders().at("destination") << std::endl;
         }
         if (sentMessages[recepitId].getCommand() == "UNSUBSCRIBE") {
-            std::cout<<"Exited channel " <<  sentMessages[recepitId] << std::endl;
+            std::cout<<"Exited channel " <<  sentMessages[recepitId].getHeaders().at("destination") << std::endl;
         }
         if (sentMessages[recepitId].getCommand() == "SEND") {
             
