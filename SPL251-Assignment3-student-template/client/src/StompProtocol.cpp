@@ -24,7 +24,7 @@ StompProtocol::StompProtocol(ConnectionHandler& handler)
     sentMessages()  {}
    //might cause problems because of map <string, int> and not the other way around when we try to delete
 
-void StompProtocol::connect(const std::string& hostPort, const std::string& username, const std::string& password){
+void StompProtocol::connect(const std::string& username, const std::string& password){
     if (connected){
         std::cout<<"The client is already logged in, log out before trying again";
     }
@@ -70,8 +70,8 @@ void StompProtocol::unsubscribe(const std::string& topic){
     unsubframe.addHeader("receipt", std::to_string(sentIdCounter));
     std::string encodedFrame = FrameCodec::encode(unsubframe);
     connectionHandler.sendFrameAscii(encodedFrame, '\0');
-    subscriptions.erase(topic); 
-    
+    subscriptions.erase(topic);
+
     // subscriptionidCounter-- ? = put into processFromServer
 
 }
@@ -113,7 +113,8 @@ bool StompProtocol::processFromKeyboard(std::string userInput){
         line.push_back(argument);
     }
     if (line[0] == "login" ) {
-        connect(line[1], line[2], line[3]);
+        cout << "arrived login " << line[1] << " " << line[2] << endl;
+        connect(line[1], line[2]);
         return true;
     }
     else if (line[0] == "join"){

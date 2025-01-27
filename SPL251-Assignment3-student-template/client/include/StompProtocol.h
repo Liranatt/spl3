@@ -19,17 +19,16 @@ class StompProtocol {
         std::map<std::string, std::map<std::string, std::vector<Event>>> dataReceived;
         std::map<int, Frame> sentMessages;
         std::string makeReportForSummary(std::string channel, std::string user);
-        void connect(const std::string& hostPort, const std::string& username, const std::string& password);
         void subscribe(const std::string& topic);
         void unsubscribe(const std::string& topic);
         void send(const std::string& topic, const std::string& message);
         void disconnect();
-        
+
 
     public:
         StompProtocol(ConnectionHandler& handler);
         ~StompProtocol() = default;
-
+        void connect(const std::string& username, const std::string& password);
         bool processFromKeyboard(std::string userInput);
         void processFromServer(Frame message);
         bool shouldTerminate() const;
