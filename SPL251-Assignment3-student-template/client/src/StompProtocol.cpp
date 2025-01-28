@@ -159,7 +159,7 @@ bool StompProtocol::processFromKeyboard(std::string userInput){
                for (const Event& event : events) {
                 Frame sendFrame("SEND");
                 sendFrame.addHeader("destination", "/" + channelName);
-                sendFrame.addHeader("user", username); // Assuming `username` is a class member or passed in.
+                sendFrame.addHeader("user", username);
 
                 std::ostringstream body;
                 body << "city: " << event.get_city() << "\n"
