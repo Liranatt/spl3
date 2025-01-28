@@ -141,13 +141,55 @@ bool StompProtocol::processFromKeyboard(std::string userInput){
             return true;
         }
         else {
-            cerr << "Failed to open the file!" << endl;
+            
             return false;
         }
     }
     else if (line[0] == "report" ) { 
-        cout << "report not implemented yet" << endl;
+        if (line.size() < 2) {
+            std::cerr << "Usage: report <file_path>" << std::endl;
+            return false;
+        }
+
+        try {
+            names_and_events parsedData = parseEventsFile(line[1]);
+            std::string channelName = parsedData.channel_name;
+            const std::vector<Event>& events = parsedData.events;
+
+            for (const Event& event : events) {
+                Frame sendFrame("SEND");
+                sendFrame.addHeader("destination", "/" + channelName);
+                sendFrame.addHeader("user", username); // Assuming `username` is a class member or passed in.
+
+                std::ostringstream body;
+                body << "city: " << event.get_city() << "\n"
+                     << "event name: " << event.get_name() << "\n"
+                     << "date time: " << event.get_date_time() << "\n"
+                     << "general information:\n";
+
+                for (const auto& [key, value] : event.get_general_information()) {
+                    body << key << ": " << value << "\n";
+                }
+
+                body << "description:\n" << event.get_description();
+
+                sendFrame.setBody(body.str());
+
+                std::string encodedFrame = FrameCodec::encode(sendFrame);
+                if (!connectionHandler.sendFrameAscii(encodedFrame, '\0')) {
+                    std::cerr << "Failed to send report for event: " << event.get_name() << std::endl;
+                }
+            }
+
+            std::cout << "All events from " << line[1] << " have been reported successfully." << std::endl;
+            return true;
+
+        } catch (const std::exception& e) {
+            std::cerr << "Error processing report command: " << e.what() << std::endl;
+            return false;
+        }
     }
+
     return false;
 }
 
