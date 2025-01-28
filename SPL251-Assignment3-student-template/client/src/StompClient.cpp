@@ -48,7 +48,10 @@ void handleLoginCommandUntilConnectedToSerer(ConnectionHandler& connectionHandle
             connectionHandler.setHost(enteredHost);
             connectionHandler.setPort(enteredPort);
             // trying to connect to these host and port
-            if(!connectionHandler.connect()){
+            try {
+                connectionHandler.close();
+            } catch (const exception& ignored) {}
+            if(!connectionHandler.connect()) {
                 cerr << "Could not connect to server1" << endl;
                 continue;
             }
@@ -65,7 +68,6 @@ void handleLoginCommandUntilConnectedToSerer(ConnectionHandler& connectionHandle
             // waiting and checking the respones from the server
             std::string response;
             connectionHandler.getFrameAscii(response, '\0');
-            cout << "response: " << response << endl;
             Frame responseFrame = FrameCodec::decode(response);
             if (responseFrame.getCommand() == "ERROR") {
                 cout << responseFrame.getHeaders().at("message") << endl;

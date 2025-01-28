@@ -51,7 +51,7 @@ void StompProtocol::subscribe(const std::string& topic){
     int subscriptionid = ++subscriptionIdCounter;
     subscriptions[topic] = subscriptionid;
     sentIdCounter++;
-    sentMessages[sentIdCounter] = topic;
+    sentMessages[sentIdCounter] = "joined channel " + topic + "\n";
 
     Frame subframe("SUBSCRIBE");
     subframe.addHeader("destination", topic);
@@ -69,7 +69,7 @@ void StompProtocol::unsubscribe(const std::string& topic){
     int itopic = subscriptions[topic];
     unsubframe.addHeader("id", std::to_string(itopic));
     sentIdCounter++;
-    sentMessages[sentIdCounter] = topic;
+    sentMessages[sentIdCounter] = "exited channel " + topic + "\n";
     unsubframe.addHeader("receipt", std::to_string(sentIdCounter));
     std::string encodedFrame = FrameCodec::encode(unsubframe);
     connectionHandler.sendFrameAscii(encodedFrame, '\0');
@@ -87,9 +87,9 @@ void StompProtocol::send(const std::string& topic, const std::string& message) {
     Frame sendFrame("SEND");
     sendFrame.addHeader("destination", topic);
     sendFrame.setBody(message);
-    sendFrame.addHeader("reciept", std::to_string(sentIdCounter));
-    sentMessages[sentIdCounter] = sendFrame;
     sentIdCounter++;
+    sendFrame.addHeader("reciept", std::to_string(sentIdCounter));
+    sentMessages[sentIdCounter] = "reported an event";
 
     std::string encodedFrame = FrameCodec::encode(sendFrame);
     connectionHandler.sendFrameAscii(encodedFrame, '\0');
@@ -106,6 +106,7 @@ void StompProtocol::disconnect(){
     disconnectframe.addHeader("receipt", std::to_string(sentIdCounter));
     std::string encodedFrame = FrameCodec::encode(disconnectframe);
     connectionHandler.sendFrameAscii(encodedFrame, '\0');
+    sentMessages[sentIdCounter] = "disconnected from server";
 }
 
 bool StompProtocol::processFromKeyboard(std::string userInput){
@@ -131,7 +132,7 @@ bool StompProtocol::processFromKeyboard(std::string userInput){
         disconnect();
         return true;
     }
-    else if (line[0] == "summary" ) { // nir
+    else if (line[0] == "summary" ) { 
         ofstream outFile(line[3]);
         if (outFile.is_open()) {
             outFile << makeReportForSummary(line[1], line[2] );
@@ -144,8 +145,8 @@ bool StompProtocol::processFromKeyboard(std::string userInput){
             return false;
         }
     }
-    else if (line[0] == "report" ) { // nir
-        
+    else if (line[0] == "report" ) { 
+        cout << "report not implemented yet" << endl;
     }
     return false;
 }
@@ -171,24 +172,28 @@ void StompProtocol::processFromServer(Frame message) {
     }
     else if (message.getCommand() == "RECEIPT") {
         int recepitId = stoi(message.getHeaders()["receipt - id"]);
-        cout << "received receipt: " << to_string(recepitId) << endl;
-        if (sentMessages[recepitId].getCommand() == "SUBSCRIBE") {
-            std::cout<<"joined channel " <<  sentMessages[recepitId].getHeaders().at("destination") << std::endl;
-        }
-        else if (sentMessages[recepitId].getCommand() == "UNSUBSCRIBE") {
-            std::cout<<"Exited channel " <<  sentMessages[recepitId].getHeaders().at("destination") << std::endl;
-        }
-        else if (sentMessages[recepitId].getCommand() == "SEND") {
-            
-        }
-        else if (sentMessages[recepitId].getCommand() == "DISCONNECT") {
-            subscriptions.clear(); //clean all the subscriptions
+        cout << sentMessages[recepitId];
+        if (sentMessages[recepitId] == "disconnected from server" ) {
             shouldTerminateBool = true;
             connected = false;
-        } 
+        }
+        // cout << "received receipt: " << to_string(recepitId) << endl;
+        // if (sentMessages[recepitId].getCommand() == "SUBSCRIBE") {
+        //     std::cout<<"joined channel " <<  sentMessages[recepitId].getHeaders().at("destination") << std::endl;
+        // }
+        // else if (sentMessages[recepitId].getCommand() == "UNSUBSCRIBE") {
+        //     std::cout<<"Exited channel " <<  sentMessages[recepitId].getHeaders().at("destination") << std::endl;
+        // }
+        // else if (sentMessages[recepitId].getCommand() == "SEND") {
+            
+        // }
+        // else if (sentMessages[recepitId].getCommand() == "DISCONNECT") {
+        //     subscriptions.clear(); //clean all the subscriptions
+            
+        // } 
     }
     else if (message.getCommand() == "ERROR") {
-
+        cout << message.getHeaders().at("message") << endl;
     }
 }
 
