@@ -14,7 +14,6 @@ public class StompMessageEncoderDecoder implements MessageEncoderDecoder<Frame> 
     @Override
     public Frame decodeNextByte(byte nextByte) {
         if (nextByte == '\0') {
-            System.out.println("entered here and len = " + len);
             return parseToFrame();
         }
 
@@ -24,7 +23,6 @@ public class StompMessageEncoderDecoder implements MessageEncoderDecoder<Frame> 
 
     @Override
     public byte[] encode(Frame message) {
-//        return message.encode();
         StringBuilder output = new StringBuilder();
         output.append(message.getCommand() + "\n");
         for (String key: message.getHeaders().keySet()){
@@ -34,8 +32,6 @@ public class StompMessageEncoderDecoder implements MessageEncoderDecoder<Frame> 
         output.append("\n");
         output.append(message.getBody() + "\n");
         output.append('\0');
-//        System.out.println("output.toString().indexOf('\\0')     = " + output.toString().indexOf('\0'));
-//        System.out.println("output.toString().lastIndexOf('\\0') = " + output.toString().lastIndexOf('\0'));
         return output.toString().getBytes();
     }
 
@@ -75,8 +71,6 @@ public class StompMessageEncoderDecoder implements MessageEncoderDecoder<Frame> 
             if (result != null) {
                 while (message.indexOf('\n') != 0) {
                     String line = message.substring(0, message.indexOf('\n'));
-    //                String key = line.substring(0,line.indexOf(':'));
-    //                String value = line.substring(line.indexOf(':') + 1);
                     result.addHeader(line.substring(0,line.indexOf(':')), line.substring(line.indexOf(':') + 1));
                     message = message.substring(message.indexOf('\n') + 1);
                 }

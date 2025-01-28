@@ -42,9 +42,12 @@ public class StompMessagingProtocolImpl implements StompMessagingProtocol<Frame>
                     sendError("", "login and passcode are required", message);
                     break;
                 }
-                else if (!connections.addLogin(login, passcode)) {
-                    sendError("", "wrong password", message);
-                    break;
+                else {
+                    String response = connections.addLogin(login, passcode, connectionId);
+                    if (response != null) {
+                        sendError("", response, message);
+                        break;
+                    }
                 }
                 connections.send(connectionId, new ConnectedFrame());
                 break;

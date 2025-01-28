@@ -2,11 +2,11 @@
     "tasks": [
         {
             "type": "shell",
-            "label": "make StompClient",
+            "label": "make StompEMIClient",
             "command": "make",
-            "args": ["StompClient"],
+            "args": [],
             "options": {
-                "cwd": "${workspaceFolder}/client"
+                "cwd": "${workspaceFolder}/SPL251-Assignment3-student-template/client"
             }
         },
         {

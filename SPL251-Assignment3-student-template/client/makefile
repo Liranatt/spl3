@@ -3,12 +3,12 @@
 CFLAGS := -c -Wall -Weffc++ -g -std=c++11 -Iinclude
 LDFLAGS := -lboost_system -lpthread
 
-all: clean run
+all: clean StompWCIClient
 
-StompClient: 
-	run
+# StompClient: 
+# 	run
 
-run: bin/StompEMIClient
+StompWCIClient: bin/StompEMIClient
 	bin/StompEMIClient 127.0.0.1 7777
 
 bin/StompEMIClient: compile

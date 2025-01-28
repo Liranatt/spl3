@@ -10,6 +10,9 @@ using std::string;
 
 using namespace std;
 
+ConnectionHandler::ConnectionHandler() : host_(), port_(), io_service_(),
+                                                                socket_(io_service_) {}
+
 ConnectionHandler::ConnectionHandler(string host, short port) : host_(host), port_(port), io_service_(),
                                                                 socket_(io_service_) {}
 
@@ -17,8 +20,15 @@ ConnectionHandler::~ConnectionHandler() {
 	close();
 }
 
+void ConnectionHandler::setHost(std::string host) {
+	this->host_ = host;
+}
+void ConnectionHandler::setPort(short port) {
+	this->port_ = port;
+}
+
 bool ConnectionHandler::connect() {
-	std::cout << "liran and nir rulllez Starting connect to "
+	std::cout << "Starting connection to "
 	          << host_ << ":" << port_ << std::endl;
 	try {
 		tcp::endpoint endpoint(boost::asio::ip::address::from_string(host_), port_); // the server endpoint

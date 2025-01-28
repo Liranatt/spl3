@@ -1,7 +1,5 @@
 package bgu.spl.net.srv;
 
-import bgu.spl.net.impl.stomp.Frames.Frame;
-
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -10,6 +8,8 @@ public class ConnectionsImpl<T> implements Connections<T> {
     private final ConcurrentHashMap<Integer, ConnectionHandler<T>> connectionHandlers;
     private final ConcurrentHashMap<String, ConcurrentLinkedQueue<Integer>> channelsSubscription;
     private final ConcurrentHashMap<String, String> loginInformation;
+    private final ConcurrentHashMap<Integer, String> connectionIdToLogin;
+    private final ConcurrentHashMap<String, Boolean> loginIsConnected;
 
     private static class singletonHolder {
         private static final ConnectionsImpl<?> instance = new ConnectionsImpl<>();
@@ -22,6 +22,8 @@ public class ConnectionsImpl<T> implements Connections<T> {
         connectionHandlers = new ConcurrentHashMap<>();
         channelsSubscription = new ConcurrentHashMap<>();
         loginInformation = new ConcurrentHashMap<>();
+        connectionIdToLogin = new ConcurrentHashMap<>();
+        loginIsConnected = new ConcurrentHashMap<>();
     }
 
     public void subscribeToChannel(int connectionId, String channel) {
@@ -44,11 +46,19 @@ public class ConnectionsImpl<T> implements Connections<T> {
         connectionHandlers.put(connectionId, connection);
     }
 
-    public boolean addLogin(String login, String passcode) {
-        if (loginInformation.containsKey(login) && !loginInformation.get(login).equals(passcode))
-            return false;
-        loginInformation.putIfAbsent(login, passcode);
-        return true;
+    public String addLogin(String login, String passcode, int connectionId) {
+        if (loginIsConnected.containsKey(login) && loginIsConnected.get(login)) {
+            return "The client is already logged in, log out before trying again";
+        }
+        else if (loginIsConnected.containsKey(login) && !loginIsConnected.get(login) && !passcode.equals(loginInformation.get(login))) {
+            return "wrong password";
+        }
+        else if (!loginIsConnected.containsKey(login)) {
+            loginInformation.putIfAbsent(login, passcode);
+            connectionIdToLogin.putIfAbsent(connectionId, login);
+            loginIsConnected.putIfAbsent(login, true);
+        }
+        return null;
     }
 
     /**
@@ -81,6 +91,8 @@ public class ConnectionsImpl<T> implements Connections<T> {
     @Override
     public void disconnect(int connectionId) {
         ConnectionHandler<T> con = connectionHandlers.remove(connectionId);
+        loginIsConnected.put(connectionIdToLogin.get(connectionId), false);
+        connectionIdToLogin.remove(connectionId);
         if (con != null) {
             for (String key : channelsSubscription.keySet()) {
                 channelsSubscription.get(key).remove(connectionId);

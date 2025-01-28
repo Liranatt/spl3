@@ -50,7 +50,7 @@ public class Reactor<T> implements Server<T> {
             serverSock.bind(new InetSocketAddress(port));
             serverSock.configureBlocking(false);
             serverSock.register(selector, SelectionKey.OP_ACCEPT);
-			System.out.println("Reactor Server started liran and nir rulez");
+			System.out.println("Reactor Server started");
 
             while (!Thread.currentThread().isInterrupted()) {
 

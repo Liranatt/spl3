@@ -14,7 +14,7 @@ using namespace std;
 
 StompProtocol::StompProtocol(ConnectionHandler& handler)
     :connectionHandler(handler),
-    connected(false), 
+    connected(true), 
     shouldTerminateBool(false), 
     subscriptionIdCounter(0), 
     sentIdCounter(0), 
@@ -39,7 +39,6 @@ void StompProtocol::connect(const std::string& username, const std::string& pass
     if(!connectionHandler.sendFrameAscii(encodedFrame, '\0')){
         cerr<< "failed to send connect frame" << endl;
     }
-    std::cout<<"Connect Frame Sent " << std::endl;
     sentIdCounter++;
     connected = true;
 }
@@ -49,7 +48,7 @@ void StompProtocol::subscribe(const std::string& topic){
         std::cout<<"The client is not connected"<<std::endl;
     }
 
-    int subscriptionid = subscriptionIdCounter++;
+    int subscriptionid = ++subscriptionIdCounter;
     subscriptions[topic] = subscriptionid;
     sentIdCounter++;
     sentMessages[sentIdCounter] = topic;
@@ -81,7 +80,7 @@ void StompProtocol::unsubscribe(const std::string& topic){
 }
 
 void StompProtocol::send(const std::string& topic, const std::string& message) {
-    if (!connected) {
+    if (!isConnected()) {
         std::cout<<"The client is not connected"<<std::endl;
     }
 
@@ -103,23 +102,20 @@ void StompProtocol::disconnect(){
         std::cout<<"The client is not connected";
     }
     sentIdCounter++;
-    connected = false;
     Frame disconnectframe("DISCONNECT");
     disconnectframe.addHeader("receipt", std::to_string(sentIdCounter));
-    subscriptions.clear(); //clean all the subscriptions
-    this->~StompProtocol();
+    std::string encodedFrame = FrameCodec::encode(disconnectframe);
+    connectionHandler.sendFrameAscii(encodedFrame, '\0');
 }
 
 bool StompProtocol::processFromKeyboard(std::string userInput){
-    cout << "arrived to processFromKeyboard, userInput = " << userInput << endl;
     vector<string> line;
     string argument;
-    while (getline(stringstream(userInput), argument, ' ')) {
+    stringstream ss(userInput);
+    while (getline(ss, argument, ' ')) {
         line.push_back(argument);
-        cout << "argument: " << argument << endl;
     }
     if (line[0] == "login" ) {
-        cout << "arrived login " << line[1] << " " << line[2] << endl;
         connect(line[1], line[2]);
         return true;
     }
@@ -174,22 +170,27 @@ void StompProtocol::processFromServer(Frame message) {
         std::cout << "Login successful" << std::endl;
     }
     else if (message.getCommand() == "RECEIPT") {
-        int recepitId = stoi(message.getHeaders()["receipt-id"]);
+        int recepitId = stoi(message.getHeaders()["receipt - id"]);
+        cout << "received receipt: " << to_string(recepitId) << endl;
         if (sentMessages[recepitId].getCommand() == "SUBSCRIBE") {
             std::cout<<"joined channel " <<  sentMessages[recepitId].getHeaders().at("destination") << std::endl;
         }
-        if (sentMessages[recepitId].getCommand() == "UNSUBSCRIBE") {
+        else if (sentMessages[recepitId].getCommand() == "UNSUBSCRIBE") {
             std::cout<<"Exited channel " <<  sentMessages[recepitId].getHeaders().at("destination") << std::endl;
         }
-        if (sentMessages[recepitId].getCommand() == "SEND") {
+        else if (sentMessages[recepitId].getCommand() == "SEND") {
             
         }
+        else if (sentMessages[recepitId].getCommand() == "DISCONNECT") {
+            subscriptions.clear(); //clean all the subscriptions
+            shouldTerminateBool = true;
+            connected = false;
+        } 
     }
     else if (message.getCommand() == "ERROR") {
 
     }
 }
-
 
 bool StompProtocol::shouldTerminate() const {
     return shouldTerminateBool;
