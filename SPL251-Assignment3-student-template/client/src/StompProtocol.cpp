@@ -156,7 +156,7 @@ bool StompProtocol::processFromKeyboard(std::string userInput){
             std::string channelName = parsedData.channel_name;
             const std::vector<Event>& events = parsedData.events;
 
-            for (const Event& event : events) {
+               for (const Event& event : events) {
                 Frame sendFrame("SEND");
                 sendFrame.addHeader("destination", "/" + channelName);
                 sendFrame.addHeader("user", username); // Assuming `username` is a class member or passed in.
@@ -165,13 +165,10 @@ bool StompProtocol::processFromKeyboard(std::string userInput){
                 body << "city: " << event.get_city() << "\n"
                      << "event name: " << event.get_name() << "\n"
                      << "date time: " << event.get_date_time() << "\n"
-                     << "general information:\n";
-
-                for (const auto& [key, value] : event.get_general_information()) {
-                    body << key << ": " << value << "\n";
-                }
-
-                body << "description:\n" << event.get_description();
+                     << "general information:\n"
+                     << "active: " << (event.get_general_information().at("active") == "true" ? "true" : "false") << "\n"
+                     << "forces_arrival_at_scene: " << (event.get_general_information().at("forces_arrival_at_scene") == "true" ? "true" : "false") << "\n"
+                     << "description:\n" << event.get_description();
 
                 sendFrame.setBody(body.str());
 
