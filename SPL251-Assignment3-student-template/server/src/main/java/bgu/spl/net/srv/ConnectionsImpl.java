@@ -11,6 +11,7 @@ public class ConnectionsImpl<T> implements Connections<T> {
     private final ConcurrentHashMap<Integer, String> connectionIdToLogin;
     private final ConcurrentHashMap<String, Boolean> loginIsConnected;
 
+
     private static class singletonHolder {
         private static final ConnectionsImpl<?> instance = new ConnectionsImpl<>();
     }
@@ -54,9 +55,13 @@ public class ConnectionsImpl<T> implements Connections<T> {
             return "wrong password";
         }
         else if (!loginIsConnected.containsKey(login)) {
-            loginInformation.putIfAbsent(login, passcode);
-            connectionIdToLogin.putIfAbsent(connectionId, login);
-            loginIsConnected.putIfAbsent(login, true);
+            loginInformation.put(login, passcode);
+            connectionIdToLogin.put(connectionId, login);
+            loginIsConnected.put(login, true);
+        }
+        else if (loginInformation.containsKey(login) && loginInformation.get(login).equals(passcode) && !loginIsConnected.get(login)) {
+            connectionIdToLogin.put(connectionId, login);
+            loginIsConnected.put(login, true);
         }
         return null;
     }
@@ -91,6 +96,11 @@ public class ConnectionsImpl<T> implements Connections<T> {
     @Override
     public void disconnect(int connectionId) {
         ConnectionHandler<T> con = connectionHandlers.remove(connectionId);
+        // if  (connectionIdToLogin.get(connectionId) != null )
+//            System.out.println("Disconnecting client: " + connectionIdToLogin.get(connectionId));
+//        else {
+//            System.out.println("Disconnecting client: " + connectionId + " (no login)");
+//        }
         loginIsConnected.put(connectionIdToLogin.get(connectionId), false);
         connectionIdToLogin.remove(connectionId);
         if (con != null) {

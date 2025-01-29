@@ -18,13 +18,19 @@ using namespace std;
  * send a CONNECT frame to the server
  * if ERROR is received, try all over again
  * else, we have a connected {connectionHandler}, and we can go on with the client program
- * 
+ * return username used to login to the server
  * @param connectionHandler 
  */
-void handleLoginCommandUntilConnectedToSerer(ConnectionHandler& connectionHandler) {
+string handleLoginCommandUntilConnectedToSerer(ConnectionHandler& connectionHandler, string lastLine) {
     while (true) {
         // store the command in a vector
-        string userInput = KeyboardInput::getInput("Enter login command: ");
+        string userInput;
+        if (lastLine != "") {
+            userInput = lastLine;
+            lastLine = "";
+        }
+        else
+            userInput = KeyboardInput::getInput("Enter login command: ");
         vector<string> line;
         string argument;
         stringstream ss(userInput);
@@ -32,11 +38,11 @@ void handleLoginCommandUntilConnectedToSerer(ConnectionHandler& connectionHandle
             line.push_back(argument);
         }
         // Check for correct login command structure
-        if ((line.empty()) || (line[0] != "login" | line.size() != 4)) {
+        if ((line.empty()) || ((line[0] != "login") | (line.size() != 4))) {
             cerr << "Invalid login command: " << userInput << endl;
             continue;
         }
-        else if (line[0] == "login" & line.size() == 4) {
+        else if ((line[0] == "login") & (line.size() == 4)) {
             // extracting the host and port from the command
             size_t colonPos = line[1].find(':');
             if(colonPos == string::npos) {
@@ -52,7 +58,7 @@ void handleLoginCommandUntilConnectedToSerer(ConnectionHandler& connectionHandle
                 connectionHandler.close();
             } catch (const exception& ignored) {}
             if(!connectionHandler.connect()) {
-                cerr << "Could not connect to server1" << endl;
+                cerr << "Could not connect to server" << endl;
                 continue;
             }
             // sending CONNECT frame to the server
@@ -63,7 +69,7 @@ void handleLoginCommandUntilConnectedToSerer(ConnectionHandler& connectionHandle
             connectFrame.addHeader("passcode", line[3]);
             std::string encodedFrame = FrameCodec::encode(connectFrame);
             if(!connectionHandler.sendFrameAscii(encodedFrame, '\0')) {
-                cerr<< "Could not connect to server2" << endl;
+                cerr<< "could not connect to server" << endl;
             }
             // waiting and checking the respones from the server
             std::string response;
@@ -75,7 +81,7 @@ void handleLoginCommandUntilConnectedToSerer(ConnectionHandler& connectionHandle
             }
             else if (responseFrame.getCommand() == "CONNECTED") {
                 cout << "login successful" << endl;
-                break;
+                return line[2];
             }
         }
     }
@@ -94,12 +100,15 @@ int main(int argc, char *argv[]) {
      *  starting with login, then executing commands,
      *  until requesting to logout.
      */
+    string lastLine = "";
     while (true) {
         ConnectionHandler connectionHandler;
 
-        handleLoginCommandUntilConnectedToSerer(connectionHandler);
+        string username = handleLoginCommandUntilConnectedToSerer(connectionHandler, lastLine);
+        lastLine = "";
         // initiate a thread to listen to the server
         StompProtocol stompProtocol(connectionHandler);
+        stompProtocol.setUsername(username);
         thread socketThread( [&stompProtocol, &connectionHandler ]( ) {
             while (!stompProtocol.shouldTerminate() & stompProtocol.isConnected()) {
                 std::string response;
@@ -110,8 +119,16 @@ int main(int argc, char *argv[]) {
         // listen to the keyboard and execute its commands
         while (!stompProtocol.shouldTerminate()) {
             string userInput = KeyboardInput::getInput("");
-            if (!stompProtocol.processFromKeyboard(userInput))
-                cerr << "Unknown command: " << userInput << endl;
+            if (stompProtocol.shouldTerminate()) {
+                lastLine = userInput;
+            }
+            else {
+                string response = stompProtocol.processFromKeyboard(userInput);
+                if (response.length()  > 0)
+                    cerr << response << endl;
+            }
+            // else if (!stompProtocol.processFromKeyboard(userInput))
+            //     cerr << "Unknown command: " << userInput << endl;
         }
         socketThread.join();
     } // enb of never ending while true;

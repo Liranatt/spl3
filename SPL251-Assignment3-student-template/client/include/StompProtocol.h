@@ -18,9 +18,12 @@ class StompProtocol {
         std::mutex dataReceivedLock;
         std::map<std::string, std::map<std::string, std::vector<Event>>> dataReceived;
         std::map<int, std::string> sentMessages;
+        std::map<int, std::function<void()>> receiptActions;
+        std::string username;
         std::string makeReportForSummary(std::string channel, std::string user);
-        void subscribe(const std::string& topic);
-        void unsubscribe(const std::string& topic);
+        std::string processReport(std::vector<std::string> line);
+        std::string subscribe(const std::string& topic);
+        std::string unsubscribe(const std::string& topic);
         void send(const std::string& topic, const std::string& message);
         void disconnect();
 
@@ -28,8 +31,9 @@ class StompProtocol {
     public:
         StompProtocol(ConnectionHandler& handler);
         ~StompProtocol() = default;
+        void setUsername(std::string username);
         void connect(const std::string& username, const std::string& password);
-        bool processFromKeyboard(std::string userInput);
+        std::string processFromKeyboard(std::string userInput);
         void processFromServer(Frame message);
         bool shouldTerminate() const;
         bool isConnected() const;
