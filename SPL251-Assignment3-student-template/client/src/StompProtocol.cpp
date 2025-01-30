@@ -8,6 +8,9 @@
 #include <mutex>
 #include <iostream>
 #include <fstream>
+#include <thread>
+#include <chrono>
+
 
 
 using namespace std;
@@ -241,27 +244,42 @@ string StompProtocol::processReport(vector<string> line) {
     }
 
     try {
+        // Parse JSON file into structured data
         names_and_events parsedData = parseEventsFile(line[1]);
         std::string channelName = parsedData.channel_name;
         const std::vector<Event>& events = parsedData.events;
 
-            for (const Event& event : events) {
-            Frame sendFrame("SEND");
-            sendFrame.addHeader("destination", "/" + channelName);
-            sendFrame.addHeader("user", username);
+        // Subscribe to "/topic/police" (ensures correct matching with SEND frames)
+        std::string subscribeResult = subscribe("/topic/" + channelName);
+        if (!subscribeResult.empty()) {
+            return "Error subscribing to channel: " + subscribeResult;
+        }
 
+        // Wait for server to process the subscription (prevents race condition)
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+
+        for (const Event& event : events) {
+            Frame sendFrame("SEND");
+            sendFrame.addHeader("destination", "/topic/" + channelName);
+            sendFrame.addHeader("user", username);
+            sendFrame.addHeader("content-type", "text/plain");
+
+            // Format the body correctly
             std::ostringstream body;
             body << "city: " << event.get_city() << "\n"
-                    << "event name: " << event.get_name() << "\n"
-                    << "date time: " << event.get_date_time() << "\n"
-                    << "general information:\n"
-                    << "active: " << (event.get_general_information().at("active") == "true" ? "true" : "false") << "\n"
-                    << "forces_arrival_at_scene: " << (event.get_general_information().at("forces_arrival_at_scene") == "true" ? "true" : "false") << "\n"
-                    << "description:\n" << event.get_description();
+                 << "event_name: " << event.get_name() << "\n"
+                 << "date_time: " << event.get_date_time() << "\n"
+                 << "general_information:\n"
+                 << "  active: " << (event.get_general_information().at("active") == "true" ? "true" : "false") << "\n"
+                 << "  forces_arrival_at_scene: " << (event.get_general_information().at("forces_arrival_at_scene") == "true" ? "true" : "false") << "\n"
+                 << "description:\n  " << event.get_description();
 
             sendFrame.setBody(body.str());
 
+            // Encode and send the STOMP frame
             std::string encodedFrame = FrameCodec::encode(sendFrame);
+            std::cout << "DEBUG: Sending STOMP Frame:\n" << encodedFrame << std::endl;
+
             if (!connectionHandler.sendFrameAscii(encodedFrame, '\0')) {
                 std::cerr << "Failed to send report for event: " << event.get_name() << std::endl;
             }
@@ -271,11 +289,17 @@ string StompProtocol::processReport(vector<string> line) {
         return "";
 
     } catch (const std::exception& e) {
-        string response = "Error processing report command: ";
-        response += e.what();
-        return response;
+        return "Error processing report command: " + std::string(e.what());
     }
 }
+
+
+
+
+
+
+
+
 
 string StompProtocol::makeReportForSummary(string channel, string user) {
     int active = 0;
