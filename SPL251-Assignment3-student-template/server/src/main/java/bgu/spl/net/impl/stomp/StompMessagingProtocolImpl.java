@@ -25,7 +25,7 @@ public class StompMessagingProtocolImpl implements StompMessagingProtocol<Frame>
 
     @Override
     public void process(Frame message) {
-        System.out.println("processing message:\n" + message);
+//        System.out.println("processing message:\n" + message);
         switch (message.getCommand()) {
             case "CONNECT":
                 if ( !message.getHeaders().containsKey("accept-version") || !message.getHeaders().get("accept-version").equals("1.2") ) {
