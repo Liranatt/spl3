@@ -12,12 +12,13 @@ class StompProtocol {
         ConnectionHandler& connectionHandler;
         bool connected;
         bool shouldTerminateBool;
+        bool terminateAllClients;
         int subscriptionIdCounter;
         int sentIdCounter;
         std::map<std::string, int> subscriptions;
         std::mutex dataReceivedLock;
         std::map<std::string, std::map<std::string, std::vector<Event>>> dataReceived;
-        std::map<int, std::string> sentMessages;
+        // std::map<int, std::string> sentMessages;
         std::map<int, std::function<void()>> receiptActions;
         std::string username;
         std::string makeReportForSummary(std::string channel, std::string user);
@@ -37,4 +38,5 @@ class StompProtocol {
         void processFromServer(Frame message);
         bool shouldTerminate() const;
         bool isConnected() const;
+        bool shouldTerminateAllClients() const;
 };

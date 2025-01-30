@@ -133,6 +133,7 @@ public class StompMessagingProtocolImpl implements StompMessagingProtocol<Frame>
         String body = "The message:\n-----\n" + message + "\n-----\n" + errorMessage;
         error.addBody(body);
         connections.send(connectionId, error);
+        connections.disconnect(connectionId);
         shouldTerminate = true;
     }
 

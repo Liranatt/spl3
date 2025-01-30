@@ -16,15 +16,20 @@ StompProtocol::StompProtocol(ConnectionHandler& handler)
     :connectionHandler(handler),
     connected(true), 
     shouldTerminateBool(false), 
+    terminateAllClients(false), 
     subscriptionIdCounter(0), 
     sentIdCounter(0), 
     subscriptions(),
     dataReceivedLock(), 
     dataReceived(),
-    sentMessages(),
+    // sentMessages(),
     receiptActions(),
     username()  {}
    //might cause problems because of map <string, int> and not the other way around when we try to delete
+
+    void StompProtocol::setUsername(string username) {
+        this->username = username;
+    }
 
 void StompProtocol::connect(const std::string& username, const std::string& password){
     if (connected){
@@ -57,7 +62,7 @@ string StompProtocol::subscribe(const std::string& topic){
     int subscriptionId = subscriptionIdCounter;
     // subscriptions[subscriptionId] = topic;
     sentIdCounter++;
-    sentMessages[sentIdCounter] = "joined channel " + topic + "\n";
+    // sentMessages[sentIdCounter] = "joined channel " + topic + "\n";
     receiptActions[sentIdCounter] = [&topic, subscriptionId, this]() {
         cout << "joined channel " << topic << endl;
         subscriptions[topic] = subscriptionId;
@@ -88,10 +93,10 @@ string StompProtocol::unsubscribe(const std::string& topic) {
     if (subscriptions.count(topic) == 0) {
         return "you are not subscribed to " + topic;
     }
-    Frame unsubframe("UNSUBSCRIBED");
+    Frame unsubframe("UNSUBSCRIBE");
     unsubframe.addHeader("id", to_string(subscriptions[topic]));
     sentIdCounter++;
-    sentMessages[sentIdCounter] = "exited channel " + topic + "\n";
+    // sentMessages[sentIdCounter] = "exited channel " + topic + "\n";
     receiptActions[sentIdCounter] = [&topic, this]() {
         cout << "exited channel " << topic << endl;
         subscriptions.erase(topic);
@@ -116,7 +121,7 @@ void StompProtocol::send(const std::string& topic, const std::string& message) {
     sendFrame.setBody(message);
     sentIdCounter++;
     sendFrame.addHeader("reciept", std::to_string(sentIdCounter));
-    sentMessages[sentIdCounter] = "reported an event";
+    // sentMessages[sentIdCounter] = "reported an event";
     receiptActions[sentIdCounter] = []() {
         cout << "reported an event " << endl;
     };
@@ -136,7 +141,7 @@ void StompProtocol::disconnect(){
     disconnectframe.addHeader("receipt", std::to_string(sentIdCounter));
     std::string encodedFrame = FrameCodec::encode(disconnectframe);
     connectionHandler.sendFrameAscii(encodedFrame, '\0');
-    sentMessages[sentIdCounter] = "disconnected from server";
+    // sentMessages[sentIdCounter] = "disconnected from server";
     receiptActions[sentIdCounter] = [this]() {
         cout << "disconnected from server " << endl;
         shouldTerminateBool = true;
@@ -211,7 +216,10 @@ void StompProtocol::processFromServer(Frame message) {
         // }
     }
     else if (message.getCommand() == "ERROR") {
-        cout << message.getHeaders().at("message") << endl;
+        cout << FrameCodec::encode(message) << endl;
+        terminateAllClients = true;
+        connected = false;
+        shouldTerminateBool = true;
     }
 }
 
@@ -221,6 +229,10 @@ bool StompProtocol::shouldTerminate() const {
 
 bool StompProtocol::isConnected() const {
     return connected;
+}
+
+bool StompProtocol::shouldTerminateAllClients() const {
+    return terminateAllClients;
 }
 
 string StompProtocol::processReport(vector<string> line) {

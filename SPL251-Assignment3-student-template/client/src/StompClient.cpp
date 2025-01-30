@@ -131,6 +131,8 @@ int main(int argc, char *argv[]) {
             //     cerr << "Unknown command: " << userInput << endl;
         }
         socketThread.join();
+        if (stompProtocol.shouldTerminateAllClients())
+            break;
     } // enb of never ending while true;
     return 0;
 }

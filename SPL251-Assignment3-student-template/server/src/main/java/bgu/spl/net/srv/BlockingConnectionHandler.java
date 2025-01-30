@@ -24,8 +24,9 @@ public class BlockingConnectionHandler<T> implements Runnable, ConnectionHandler
         this.protocol = protocol;
         protocol.start(clientId, ConnectionsImpl.getInstance());
     }
-
-    @Override
+    // /workspaces/spl3/SPL251-Assignment3-student-template/client/data/events1.json
+/*      C:\Users\horow\Documents\*******\\universita\SPL\spl3-main1\spl3-main\SPL251-Assignment3-student-template\client\data\events1.json
+ */    @Override
     public void run() {
         try (Socket sock = this.sock) { //just for automatic closing
             int read;
