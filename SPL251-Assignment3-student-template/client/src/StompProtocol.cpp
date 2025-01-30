@@ -156,75 +156,97 @@ string StompProtocol::processFromKeyboard(std::string userInput) {
     vector<string> line;
     string argument;
     stringstream ss(userInput);
+    
     while (getline(ss, argument, ' ')) {
         line.push_back(argument);
     }
-    if ((line[0] == "login") & (line.size() == 3)) {
+
+    if ((line[0] == "login") && (line.size() == 3)) {
         connect(line[1], line[2]);
         return "";
     }
-    else if ((line[0] == "join") & (line.size() == 2)) {
+    else if ((line[0] == "join") && (line.size() == 2)) {
         return subscribe(line[1]);
     }
-    else if ((line[0] == "exit") & (line.size() == 2)) {
+    else if ((line[0] == "exit") && (line.size() == 2)) {
         return unsubscribe(line[1]);
     }
-    else if ((line[0] == "logout") & (line.size() == 1)) {
+    else if ((line[0] == "logout") && (line.size() == 1)) {
         disconnect();
         return "";
     }
-    else if ((line[0] == "summary") & (line.size() == 3)) {
-        ofstream outFile(line[3]);
+    else if ((line[0] == "summary") && (line.size() == 4)) {  // ✅ Ensure 4 arguments
+        std::ofstream outFile(line[3]);  // ✅ Correct file index
         if (outFile.is_open()) {
-            outFile << makeReportForSummary(line[1], line[2] );
+            outFile << makeReportForSummary(line[1], line[2]);
             outFile.close();
-            return "summary exported";
-        }
-        else {
-            return "summary error";
+            return "Summary exported to " + line[3];
+        } else {
+            return "Error: Could not write summary file!";
         }
     }
-    else if ((line[0] == "report") & (line.size() == 2)) {
+    else if ((line[0] == "report") && (line.size() == 2)) {
         return processReport(line);
     }
-    return "invalid command";
+    
+    return "Invalid command";
 }
 
+
+
 void StompProtocol::processFromServer(Frame message) {
-    if (message.getCommand() == "MESSAGE") { // nir
-        Event event(message.getBody());
-        string channel = event.get_channel_name();
-        string user = event.getEventOwnerUser();
-        int time = event.get_date_time();
-        if ((!channel.empty() & !user.empty()) & (time != 0)) {
-            dataReceivedLock.lock();
-            (dataReceived)[channel][user].push_back(event);
-            dataReceivedLock.unlock();
+    std::cout << "🔍 DEBUG: Processing incoming server message:\n" << FrameCodec::encode(message) << std::endl;
+
+    if (message.getCommand() == "MESSAGE" || message.getCommand() == "SEND") {  // ✅ Handle incoming reports
+        if (message.getHeaders().find("destination") == message.getHeaders().end() ||
+            message.getHeaders().find("user") == message.getHeaders().end()) {
+            std::cerr << " ERROR: Missing 'destination' or 'user' header in received message!\n";
+            return;
         }
-        else {
-            cout << "no topic or no user or no time in SEND Frame from server" << endl;
+
+        std::string channel = message.getHeaders().at("destination");
+        std::string user = message.getHeaders().at("user");
+
+        // Ensure channel format is consistent
+        if (channel.find("/topic/") == std::string::npos) {
+            channel = "/topic/" + channel;
         }
-    }
+
+        try {
+            Event event(message.getBody());
+
+            // Store event in received data
+            std::lock_guard<std::mutex> lock(dataReceivedLock);
+            dataReceived[channel][user].push_back(event);
+
+            std::cout << "✅ Stored event for " << user << " in " << channel << "\n";
+        } catch (const std::exception &e) {
+            std::cerr << " ERROR: Failed to parse event: " << e.what() << "\n";
+        }
+    } 
     else if (message.getCommand() == "CONNECTED") {
         connected = true;
-        std::cout << "Login successful" << std::endl;
-    }
+        std::cout << "✅ Login successful" << std::endl;
+    } 
     else if (message.getCommand() == "RECEIPT") {
-        int recepitId = stoi(message.getHeaders()["receipt - id"]);
-        receiptActions[recepitId]();
-        // cout << sentMessages[recepitId];
-        // if (sentMessages[recepitId] == "disconnected from server" ) {
-        //     shouldTerminateBool = true;
-        //     connected = false;
-        // }
-    }
+        if (message.getHeaders().find("receipt - id") != message.getHeaders().end()) {
+            int receiptId = stoi(message.getHeaders().at("receipt - id"));
+            if (receiptActions.count(receiptId)) {
+                receiptActions[receiptId]();
+            }
+        }
+    } 
     else if (message.getCommand() == "ERROR") {
-        cout << FrameCodec::encode(message) << endl;
+        std::cerr << " ERROR Received: " << FrameCodec::encode(message) << std::endl;
         terminateAllClients = true;
         connected = false;
         shouldTerminateBool = true;
     }
 }
+
+
+
+
 
 bool StompProtocol::shouldTerminate() const {
     return shouldTerminateBool;
@@ -300,53 +322,61 @@ string StompProtocol::processReport(vector<string> line) {
 
 
 
-
 string StompProtocol::makeReportForSummary(string channel, string user) {
-    int active = 0;
-    int arrived = 0;
-    dataReceivedLock.lock();
-    int total = (dataReceived)[channel][user].size();
-    for ( int i = 0; i < total; i++)  {
-        if ((dataReceived)[channel][user][i].get_general_information().count("active") > 0 &&
-            (dataReceived)[channel][user][i].get_general_information().at("active") == "true")
-            active++;
-        if ((dataReceived)[channel][user][i].get_general_information().count("forces arrival at scene") > 0 &&
-            (dataReceived)[channel][user][i].get_general_information().at("forces arrival at scene") == "true")
-            arrived++;
+    std::lock_guard<std::mutex> lock(dataReceivedLock);
+
+    // 🔹 Ensure correct channel format
+    if (dataReceived.find(channel) == dataReceived.end() &&
+        dataReceived.find("/topic/" + channel) != dataReceived.end()) {
+        channel = "/topic/" + channel;
     }
 
-    string toPrint = "Channel " + channel + "\n";
-    toPrint.append("Stats:\n");
-    toPrint.append("Total: ").append(to_string(total)).append("\n");
-    toPrint.append("active: ").append(to_string(active)).append("\n");
-    toPrint.append("forces arrival at scene : ").append(to_string(arrived)).append("\n");
-    toPrint.append("\nEvent Reports:\n");
+    // 🔹 Check if the channel exists
+    if (dataReceived.find(channel) == dataReceived.end()) {
+        return "ERROR: No data available for channel: " + channel;
+    }
 
-    auto& events = (dataReceived)[channel][user];
-    sort(events.begin(), events.end(), [](const Event &a, const Event &b) {
-        if (a.get_date_time() != b.get_date_time()) {
-            return a.get_date_time() < b.get_date_time(); // sort by time
-        }
-        return a.get_name() < b.get_name(); // sort by name
+    // 🔹 Check if the user exists
+    if (dataReceived[channel].find(user) == dataReceived[channel].end()) {
+        return "ERROR: No data available for user: " + user + " in channel: " + channel;
+    }
+
+    int activeCount = 0, arrivedCount = 0;
+    int totalEvents = dataReceived[channel][user].size();
+
+    for (const Event &event : dataReceived[channel][user]) {
+        if (event.get_general_information().count("active") && event.get_general_information().at("active") == "true")
+            activeCount++;
+        if (event.get_general_information().count("forces_arrival_at_scene") &&
+            event.get_general_information().at("forces_arrival_at_scene") == "true")
+            arrivedCount++;
+    }
+
+    std::ostringstream report;
+    report << "📢 Channel: " << channel << "\n";
+    report << "📊 Stats:\n";
+    report << "Total Events: " << totalEvents << "\n";
+    report << "Active: " << activeCount << "\n";
+    report << "Forces Arrival: " << arrivedCount << "\n\n";
+    report << "📜 Event Reports:\n";
+
+    auto &events = dataReceived[channel][user];
+    std::sort(events.begin(), events.end(), [](const Event &a, const Event &b) {
+        return a.get_date_time() < b.get_date_time();
     });
 
-    for (int i = 0; i < total; i++) {
-        toPrint.append("\nReport_").append(to_string((i+1))).append("\n");
-        toPrint.append("\tciry: ").append(events[i].get_city()).append("\n");
-        toPrint.append("\tdate time: ").append(to_string(events[i].get_date_time())).append("\n");
-        toPrint.append("\tevent name: ").append(events[i].get_name()).append("\n");
-        if (events[i].get_description().length() <= 30)
-            toPrint.append("\tevent name: ").append(events[i].get_name()).append("\n");
-        else 
-            toPrint.append("\tevent name: ").append(events[i].get_name().substr(0, 27)).append("...\n");
+    int reportNum = 1;
+    for (const Event &event : events) {
+        report << "\n Report_" << reportNum++ << "\n";
+        report << "     City: " << event.get_city() << "\n";
+        report << "     Event Name: " << event.get_name() << "\n";
+        report << "     Date/Time: " << event.get_date_time() << "\n";
+        report << "     General Information:\n";
+        report << "       Active: " << (event.get_general_information().count("active") ? event.get_general_information().at("active") : "N/A") << "\n";
+        report << "       Forces Arrival: " << (event.get_general_information().count("forces_arrival_at_scene") ? event.get_general_information().at("forces_arrival_at_scene") : "N/A") << "\n";
+        report << "     Description: " << event.get_description() << "\n";
     }
-    dataReceivedLock.unlock();
-    return toPrint;
+
+    return report.str();
 }
-
-
-
-
-
-
 
