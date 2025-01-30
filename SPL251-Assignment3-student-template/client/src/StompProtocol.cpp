@@ -25,10 +25,8 @@ StompProtocol::StompProtocol(ConnectionHandler& handler)
     subscriptions(),
     dataReceivedLock(), 
     dataReceived(),
-    // sentMessages(),
     receiptActions(),
     username()  {}
-   //might cause problems because of map <string, int> and not the other way around when we try to delete
 
     void StompProtocol::setUsername(string username) {
         this->username = username;
@@ -63,9 +61,7 @@ string StompProtocol::subscribe(const std::string& topic){
     }
     subscriptionIdCounter++;
     int subscriptionId = subscriptionIdCounter;
-    // subscriptions[subscriptionId] = topic;
     sentIdCounter++;
-    // sentMessages[sentIdCounter] = "joined channel " + topic + "\n";
     receiptActions[sentIdCounter] = [&topic, subscriptionId, this]() {
         cout << "joined channel " << topic << endl;
         subscriptions[topic] = subscriptionId;
@@ -84,22 +80,12 @@ string StompProtocol::unsubscribe(const std::string& topic) {
     if (!connected){
          std::cout<<"The client is not connected"<<std::endl;
     }
-    // i changed subscriptions from <string, int> to <int, string> back although it doesnt really matter, we need to use find_if function to check if the
-    // the department we want to delete exists and then procceed (thats why nothing happen)
-    // bool exists = find(begin(subscriptions), end(subscriptions), topic) != end(subscriptions);
-    // if (exists){
-    //     if (subscriptions[subscriptions.size() -1] != topic)
-    //     cout << "the user is not subscripted to that department" << endl;
-    // }
-    // int itopic = find(begin(subscriptions), end(subscriptions), topic);
-
     if (subscriptions.count(topic) == 0) {
         return "you are not subscribed to " + topic;
     }
     Frame unsubframe("UNSUBSCRIBE");
     unsubframe.addHeader("id", to_string(subscriptions[topic]));
     sentIdCounter++;
-    // sentMessages[sentIdCounter] = "exited channel " + topic + "\n";
     receiptActions[sentIdCounter] = [&topic, this]() {
         cout << "exited channel " << topic << endl;
         subscriptions.erase(topic);
@@ -108,32 +94,8 @@ string StompProtocol::unsubscribe(const std::string& topic) {
     std::string encodedFrame = FrameCodec::encode(unsubframe);
     connectionHandler.sendFrameAscii(encodedFrame, '\0');
     return "";
-    // subscriptions.erase(topic);
-
-    // subscriptionidCounter-- ? = put into processFromServer
-
 }
 
-void StompProtocol::send(const std::string& topic, const std::string& message) {
-    if (!isConnected()) {
-        std::cout<<"The client is not connected"<<std::endl;
-    }
-
-    Frame sendFrame("SEND");
-    sendFrame.addHeader("destination", topic);
-    sendFrame.setBody(message);
-    sentIdCounter++;
-    sendFrame.addHeader("reciept", std::to_string(sentIdCounter));
-    // sentMessages[sentIdCounter] = "reported an event";
-    receiptActions[sentIdCounter] = []() {
-        cout << "reported an event " << endl;
-    };
-
-    std::string encodedFrame = FrameCodec::encode(sendFrame);
-    connectionHandler.sendFrameAscii(encodedFrame, '\0');
-
-    // std::cout << "Message sent to topic: " << topic << std::endl;
-}
 
 void StompProtocol::disconnect(){
     if (!isConnected()){
@@ -144,7 +106,6 @@ void StompProtocol::disconnect(){
     disconnectframe.addHeader("receipt", std::to_string(sentIdCounter));
     std::string encodedFrame = FrameCodec::encode(disconnectframe);
     connectionHandler.sendFrameAscii(encodedFrame, '\0');
-    // sentMessages[sentIdCounter] = "disconnected from server";
     receiptActions[sentIdCounter] = [this]() {
         cout << "disconnected from server " << endl;
         shouldTerminateBool = true;
@@ -161,31 +122,43 @@ string StompProtocol::processFromKeyboard(std::string userInput) {
         line.push_back(argument);
     }
 
-    if ((line[0] == "login") && (line.size() == 3)) {
+    if (line[0] == "login") {
+        if (line.size() != 3)
+            return "login command needs 3 args: {host:port}, {username}, {passcode}";
         connect(line[1], line[2]);
         return "";
     }
-    else if ((line[0] == "join") && (line.size() == 2)) {
+    else if (line[0] == "join") {
+        if (line.size() != 2)
+            return "join command needs 1 args: {channel_name}";
         return subscribe(line[1]);
     }
-    else if ((line[0] == "exit") && (line.size() == 2)) {
+    else if (line[0] == "exit") {
+        if (line.size() != 2)
+            return "exit command needs 1 args: {channel_name}";
         return unsubscribe(line[1]);
     }
-    else if ((line[0] == "logout") && (line.size() == 1)) {
+    else if (line[0] == "logout") {
+        if (line.size() != 1)
+            return "logout command needs 0 args";
         disconnect();
         return "";
     }
-    else if ((line[0] == "summary") && (line.size() == 4)) {  // ✅ Ensure 4 arguments
-        std::ofstream outFile(line[3]);  // ✅ Correct file index
+    else if (line[0] == "summary") {  
+        if (line.size() != 4) 
+            return "summary command needs 3 args: {channel_name}, {user}, {file}";
+        std::ofstream outFile(line[3]);  
         if (outFile.is_open()) {
             outFile << makeReportForSummary(line[1], line[2]);
             outFile.close();
-            return "Summary exported to " + line[3];
+            return "";
         } else {
             return "Error: Could not write summary file!";
         }
     }
-    else if ((line[0] == "report") && (line.size() == 2)) {
+    else if (line[0] == "report") {
+        if (line.size() != 2)
+            return "summary command needs 1 args: {file}";
         return processReport(line);
     }
     
@@ -195,9 +168,7 @@ string StompProtocol::processFromKeyboard(std::string userInput) {
 
 
 void StompProtocol::processFromServer(Frame message) {
-    std::cout << "🔍 DEBUG: Processing incoming server message:\n" << FrameCodec::encode(message) << std::endl;
-
-    if (message.getCommand() == "MESSAGE" || message.getCommand() == "SEND") {  // ✅ Handle incoming reports
+    if (message.getCommand() == "MESSAGE" || message.getCommand() == "SEND") {  // Handle incoming reports
         if (message.getHeaders().find("destination") == message.getHeaders().end() ||
             message.getHeaders().find("user") == message.getHeaders().end()) {
             std::cerr << " ERROR: Missing 'destination' or 'user' header in received message!\n";
@@ -207,26 +178,21 @@ void StompProtocol::processFromServer(Frame message) {
         std::string channel = message.getHeaders().at("destination");
         std::string user = message.getHeaders().at("user");
 
-        // Ensure channel format is consistent
-        if (channel.find("/topic/") == std::string::npos) {
-            channel = "/topic/" + channel;
-        }
 
         try {
             Event event(message.getBody());
 
             // Store event in received data
-            std::lock_guard<std::mutex> lock(dataReceivedLock);
+            dataReceivedLock.lock();
             dataReceived[channel][user].push_back(event);
-
-            std::cout << "✅ Stored event for " << user << " in " << channel << "\n";
+            dataReceivedLock.unlock();
         } catch (const std::exception &e) {
             std::cerr << " ERROR: Failed to parse event: " << e.what() << "\n";
         }
     } 
     else if (message.getCommand() == "CONNECTED") {
         connected = true;
-        std::cout << "✅ Login successful" << std::endl;
+        std::cout << "Login successful" << std::endl;
     } 
     else if (message.getCommand() == "RECEIPT") {
         if (message.getHeaders().find("receipt - id") != message.getHeaders().end()) {
@@ -245,9 +211,6 @@ void StompProtocol::processFromServer(Frame message) {
 }
 
 
-
-
-
 bool StompProtocol::shouldTerminate() const {
     return shouldTerminateBool;
 }
@@ -261,54 +224,39 @@ bool StompProtocol::shouldTerminateAllClients() const {
 }
 
 string StompProtocol::processReport(vector<string> line) {
-    if (line.size() < 2) {
-        return "Usage: report <file_path>";
-    }
-
     try {
         // Parse JSON file into structured data
         names_and_events parsedData = parseEventsFile(line[1]);
         std::string channelName = parsedData.channel_name;
         const std::vector<Event>& events = parsedData.events;
 
-        // Subscribe to "/topic/police" (ensures correct matching with SEND frames)
-        std::string subscribeResult = subscribe("/topic/" + channelName);
-        if (!subscribeResult.empty()) {
-            return "Error subscribing to channel: " + subscribeResult;
+        if (subscriptions.count(channelName) == 0) {
+            return "you are not subscribed to " + channelName;
         }
-
-        // Wait for server to process the subscription (prevents race condition)
-        std::this_thread::sleep_for(std::chrono::milliseconds(200));
-
+        
         for (const Event& event : events) {
             Frame sendFrame("SEND");
-            sendFrame.addHeader("destination", "/topic/" + channelName);
+            sendFrame.addHeader("destination", channelName);
             sendFrame.addHeader("user", username);
-            sendFrame.addHeader("content-type", "text/plain");
-
-            // Format the body correctly
             std::ostringstream body;
-            body << "city: " << event.get_city() << "\n"
-                 << "event_name: " << event.get_name() << "\n"
-                 << "date_time: " << event.get_date_time() << "\n"
-                 << "general_information:\n"
-                 << "  active: " << (event.get_general_information().at("active") == "true" ? "true" : "false") << "\n"
-                 << "  forces_arrival_at_scene: " << (event.get_general_information().at("forces_arrival_at_scene") == "true" ? "true" : "false") << "\n"
-                 << "description:\n  " << event.get_description();
-
+            // Format the body correctly
+            body << "city:" << event.get_city() << "\n"
+                 << "event name:" << event.get_name() << "\n"
+                 << "date time:" << event.get_date_time() << "\n"
+                 << "general information:\n"
+                 << "active:" << event.get_general_information().at("active") << "\n"
+                 << "forces_arrival_at_scene:" << event.get_general_information().at("forces_arrival_at_scene") << "\n"
+                 << "description:\n" << event.get_description() <<"\n\n";
             sendFrame.setBody(body.str());
-
             // Encode and send the STOMP frame
             std::string encodedFrame = FrameCodec::encode(sendFrame);
-            std::cout << "DEBUG: Sending STOMP Frame:\n" << encodedFrame << std::endl;
 
             if (!connectionHandler.sendFrameAscii(encodedFrame, '\0')) {
-                std::cerr << "Failed to send report for event: " << event.get_name() << std::endl;
+                std::cerr << "Failed to send report " << std::endl;
             }
         }
-
-        std::cout << "All events from " << line[1] << " have been reported successfully." << std::endl;
-        return "";
+        
+        return "reported";
 
     } catch (const std::exception& e) {
         return "Error processing report command: " + std::string(e.what());
@@ -317,26 +265,14 @@ string StompProtocol::processReport(vector<string> line) {
 
 
 
-
-
-
-
-
 string StompProtocol::makeReportForSummary(string channel, string user) {
-    std::lock_guard<std::mutex> lock(dataReceivedLock);
-
-    // 🔹 Ensure correct channel format
-    if (dataReceived.find(channel) == dataReceived.end() &&
-        dataReceived.find("/topic/" + channel) != dataReceived.end()) {
-        channel = "/topic/" + channel;
-    }
-
-    // 🔹 Check if the channel exists
+    dataReceivedLock.lock();
+    // Check if the channel exists
     if (dataReceived.find(channel) == dataReceived.end()) {
         return "ERROR: No data available for channel: " + channel;
     }
 
-    // 🔹 Check if the user exists
+    // Check if the user exists
     if (dataReceived[channel].find(user) == dataReceived[channel].end()) {
         return "ERROR: No data available for user: " + user + " in channel: " + channel;
     }
@@ -353,12 +289,12 @@ string StompProtocol::makeReportForSummary(string channel, string user) {
     }
 
     std::ostringstream report;
-    report << "📢 Channel: " << channel << "\n";
-    report << "📊 Stats:\n";
+    report << "Channel: " << channel << "\n";
+    report << "Stats:\n";
     report << "Total Events: " << totalEvents << "\n";
     report << "Active: " << activeCount << "\n";
     report << "Forces Arrival: " << arrivedCount << "\n\n";
-    report << "📜 Event Reports:\n";
+    report << "Event Reports:\n";
 
     auto &events = dataReceived[channel][user];
     std::sort(events.begin(), events.end(), [](const Event &a, const Event &b) {
@@ -368,14 +304,15 @@ string StompProtocol::makeReportForSummary(string channel, string user) {
     int reportNum = 1;
     for (const Event &event : events) {
         report << "\n Report_" << reportNum++ << "\n";
-        report << "     City: " << event.get_city() << "\n";
-        report << "     Event Name: " << event.get_name() << "\n";
-        report << "     Date/Time: " << event.get_date_time() << "\n";
-        report << "     General Information:\n";
-        report << "       Active: " << (event.get_general_information().count("active") ? event.get_general_information().at("active") : "N/A") << "\n";
-        report << "       Forces Arrival: " << (event.get_general_information().count("forces_arrival_at_scene") ? event.get_general_information().at("forces_arrival_at_scene") : "N/A") << "\n";
-        report << "     Description: " << event.get_description() << "\n";
+        report << "city: " << event.get_city() << "\n";
+        report << "date time: " << event.get_date_time() << "\n";
+        report << "event name: " << event.get_name() << "\n";
+        if (event.get_description().size() <= 30) 
+            report << "summary: " << event.get_description() << "\n";
+        else 
+            report << "summary: " << event.get_description().substr(0,27) << "...\n";
     }
+    dataReceivedLock.unlock();
 
     return report.str();
 }

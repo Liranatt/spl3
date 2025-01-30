@@ -101,7 +101,8 @@ public class ConnectionsImpl<T> implements Connections<T> {
 //        else {
 //            System.out.println("Disconnecting client: " + connectionId + " (no login)");
 //        }
-        loginIsConnected.put(connectionIdToLogin.get(connectionId), false);
+        if (connectionIdToLogin.containsKey(connectionId))
+            loginIsConnected.put(connectionIdToLogin.get(connectionId), false);
         connectionIdToLogin.remove(connectionId);
         if (con != null) {
             for (String key : channelsSubscription.keySet()) {
